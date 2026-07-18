@@ -1180,4 +1180,6 @@ function renderStudentSelfProfileViewer() {
   studentLogs.forEach(log => {
     tbody.insertAdjacentHTML('beforeend', `<tr><td>${log[0]}</td><td>${log[1]}</td><td><strong>${log[4]}</strong></td><td>${log[5]}</td></tr>`);
   });
+   window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
+   window.renderStaffDashboardConsole = renderStaffDashboardConsole;
 }
