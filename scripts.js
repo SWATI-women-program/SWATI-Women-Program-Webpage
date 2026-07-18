@@ -25,6 +25,16 @@ let editingRowIndices = {
   DAILY_ATTENDANCE: -1, STUDENT_MARKS: -1
 };
 
+// Base64 போட்டோ கட் ஆகி இருந்தால் அல்லது ஸ்பேஸ் இருந்தால் சரிசெய்யும் ஃபங்க்ஷன்
+function fixBase64Image(base64String) {
+  if (!base64String) return ''; 
+  let cleanString = base64String.replace(/ /g, '+');
+  while (cleanString.length % 4 !== 0) {
+    cleanString += '=';
+  }
+  return cleanString;
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   initializeLocalDatabases();
   generateTimetableSlotsUI();
@@ -485,7 +495,7 @@ function handleUniversalEdit(tblKey, rowIdx, inputControlIds) {
 
   if(tblKey === "MASTER_STUDENTS") {
     toggleHostelFieldsVisibility();
-    const existingPhoto = targetRow[15];
+    const existingPhoto = fixBase64Image(targetRow[15]);
     const previewBox = document.getElementById("photo-preview-box");
     if(existingPhoto) {
       previewBox.innerHTML = `<img src="${existingPhoto}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -771,12 +781,10 @@ function renderStaffDashboardConsole() {
               let checkKey = `${targetSubjectCode}_P${hr}`;
               let attendanceRecord = attendanceLogs.find(log => log[0] === activeDate && log[1] === checkKey && log[2] === targetClass);
               
-              // பக் பிக்ஸ்: onclick நிகழ்வை சுற்றியிருந்த சிங்கிள் கோட்ஸில் இருந்த சிக்கல் சரிசெய்யப்பட்டு, ஸ்பான் டேக் மற்றும் டெக்ஸ்ட் இரண்டிற்கும் கர்சர் பாயிண்டர் கொடுக்கப்பட்டுள்ளது.
               let statusLabel = attendanceRecord 
                 ? ` <span onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})" style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">COMPLETED</span>`
                 : ` <span onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})" style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">PENDING</span>`;
               
-              // முழு லைனுமே கிளிக் ஆகும் படி மாத்தப்பட்டுள்ளது
               matchingPeriods.push(`<div style="cursor:pointer; padding:2px 0;" onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})">${tt[1]} (Hour ${hr})${statusLabel}</div>`);
             }
           }
@@ -792,15 +800,10 @@ function renderStaffDashboardConsole() {
 }
 
 function redirectToAttendanceDirectly(classId, subjectCode, hourNumber) {
-  // 1. Attendance Entry டேப்-க்கு மாற்றவும்
   triggerNavigationTabChange("staff-attendance-section");
-
-  // 2. Class Selector டிராப்டவுனை செலக்ட் செய்யவும்
   const classSelect = document.getElementById("att-class-select");
   if (classSelect) {
     classSelect.value = classId;
-    
-    // 3. சப்ஜெக்ட் லிஸ்ட் மற்றும் பீரியடை ஆட்டோமேட்டிக்காக லோடு செய்யவும்
     filterSubjectsByAssignedStaff();
     handleSubjectClickForPeriodSelection(subjectCode, classId);
     handlePeriodClickForStudentList(hourNumber, classId);
@@ -1086,8 +1089,6 @@ function loadMarksEntrySheet() {
       <tbody>`;
 
   classStudents.forEach(st => {
-    // SYSTEM_SCHEMA படி: ["StudentID", "SubjectCode", "CIA1", "CIA2", "CIA3", "Assignment", "Attendance", "Semester", "Total", "RecordID"]
-    // record[7] என்பது Semester, record[8] என்பது Total
     let record = marksList.find(m => m[0] === st[0] && m[1] === subCode) || ["", "", "0", "0", "0", "0", "0", "0", "0"];
     
     html += `
@@ -1111,20 +1112,39 @@ function loadMarksEntrySheet() {
 function calculateRowTotalMarks(inputNode) {
   const row = inputNode.closest(".marks-row-node");
   
-  // மதிப்பெண்களை வாங்குதல்
-  const c1 = parseFloat(row.querySelector(".cia1").value) || 0;
-  const c2 = parseFloat(row.querySelector(".cia2").value) || 0;
-  const c3 = parseFloat(row.querySelector(".cia3").value) || 0;
-  const as = parseFloat(row.querySelector(".assgn").value) || 0;
-  const at = parseFloat(row.querySelector(".atten").value) || 0;
-  const sem = parseFloat(row.querySelector(".semester-mark").value) || 0;
+  // மதிப்பெண்களை வாங்குதல் மற்றும் அதிகபட்ச வரம்புகளை செக் செய்தல் (Math.min)
+  let c1 = parseFloat(row.querySelector(".cia1").value) || 0;
+  c1 = Math.min(c1, 20);
+  
+  let c2 = parseFloat(row.querySelector(".cia2").value) || 0;
+  c2 = Math.min(c2, 20);
+  
+  let c3 = parseFloat(row.querySelector(".cia3").value) || 0;
+  c3 = Math.min(c3, 20);
+  
+  let as = parseFloat(row.querySelector(".assgn").value) || 0;
+  as = Math.min(as, 5);
+  
+  let at = parseFloat(row.querySelector(".atten").value) || 0;
+  at = Math.min(at, 5);
+  
+  let sem = parseFloat(row.querySelector(".semester-mark").value) || 0;
+  sem = Math.min(sem, 100);
+
+  // பயனர் தப்பாக டைப் செய்த மதிப்பை பாக்ஸிலேயே சரிசெய்து காட்டுதல்
+  row.querySelector(".cia1").value = c1;
+  row.querySelector(".cia2").value = c2;
+  row.querySelector(".cia3").value = c3;
+  row.querySelector(".assgn").value = as;
+  row.querySelector(".atten").value = at;
+  row.querySelector(".semester-mark").value = sem;
 
   // Best of Two CIA கண்டுபிடித்தல்
   const ciaMarks = [c1, c2, c3];
-  ciaMarks.sort((a, b) => b - a); // அதிக மதிப்பெண் அடிப்படையில் வரிசைப்படுத்துதல்
+  ciaMarks.sort((a, b) => b - a); 
   const bestTwoCiaSum = ciaMarks[0] + ciaMarks[1];
 
-  // இன்டர்னல் மதிப்பெண் (Max 50)
+  // இன்டர்னல் மதிப்பெண் (Max 40 + 5 + 5 = 50)
   const internalTotal = bestTwoCiaSum + as + at;
 
   // செமஸ்டர் மதிப்பெண் 100-ஐ 50-க்கு மாற்றுதல்
@@ -1154,10 +1174,11 @@ async function saveStudentsMarksRegister() {
     let c3 = row.querySelector(".cia3").value;
     let as = row.querySelector(".assgn").value;
     let at = row.querySelector(".atten").value;
+    let sem = row.querySelector(".semester-mark").value; // "Current" பிழை நீக்கப்பட்டு அசல் மார்க் எடுக்கப்படுகிறது
     let tot = row.querySelector(".total-score").value;
 
     let matchIdx = marksList.findIndex(m => m[0] === sId && m[1] === subCode);
-    let payload = [sId, subCode, c1, c2, c3, as, at, "Current", tot];
+    let payload = [sId, subCode, c1, c2, c3, as, at, sem, tot]; 
     let recordId = matchIdx > -1 ? marksList[matchIdx][marksList[matchIdx].length - 1] : "MRK-" + Date.now() + "-" + Math.floor(Math.random()*100);
     payload.push(recordId);
 
@@ -1198,7 +1219,9 @@ function renderStudentSelfProfileViewer() {
 
   const frame = document.getElementById("p-student-photo-frame");
   if(currentStudent[15]) {
-    frame.innerHTML = `<img src="${currentStudent[15]}" style="width:100%; height:100%; object-fit:cover;">`;
+    // Base64 உடைந்து போயிருந்தால் பிக்ஸ் செய்யும் புது லாஜிக்
+    const fixedImage = fixBase64Image(currentStudent[15]);
+    frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;">`;
   }
 
   const studentLogs = attendance.filter(log => log[3] == studentUid);
@@ -1216,6 +1239,26 @@ function renderStudentSelfProfileViewer() {
   studentLogs.forEach(log => {
     tbody.insertAdjacentHTML('beforeend', `<tr><td>${log[0]}</td><td>${log[1]}</td><td><strong>${log[4]}</strong></td><td>${log[5]}</td></tr>`);
   });
-   window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
-   window.renderStaffDashboardConsole = renderStaffDashboardConsole;
 }
+
+window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
+window.renderStaffDashboardConsole = renderStaffDashboardConsole;
+window.filterSubjectsForMarksEntry = filterSubjectsForMarksEntry;
+window.loadMarksEntrySheet = loadMarksEntrySheet;
+window.calculateRowTotalMarks = calculateRowTotalMarks;
+window.saveStudentsMarksRegister = saveStudentsMarksRegister;
+window.generateAttendanceRegisterForm = generateAttendanceRegisterForm;
+window.saveFacultyAttendanceRegister = saveFacultyAttendanceRegister;
+window.handleSystemLogin = handleSystemLogin;
+window.handleLogout = handleLogout;
+window.triggerSearchFilter = triggerSearchFilter;
+window.handleFormSubmission = handleFormSubmission;
+window.handlePhotoUpload = handlePhotoUpload;
+window.calculateStudentAgeRuntime = calculateStudentAgeRuntime;
+window.toggleHostelFieldsVisibility = toggleHostelFieldsVisibility;
+window.toggleTimetablePlannerMode = toggleTimetablePlannerMode;
+window.saveTimetableRecord = saveTimetableRecord;
+window.openTimetableModalPopup = openTimetableModalPopup;
+window.closeTimetableModalPopup = closeTimetableModalPopup;
+window.renderModalTimetableGrid = renderModalTimetableGrid;
+window.syncAllFromGoogleSheets = syncAllFromGoogleSheets;
