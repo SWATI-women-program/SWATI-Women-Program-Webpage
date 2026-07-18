@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Institutional Management Portal - Enterprise Edition</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-container {
+      background: #ffffff;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 85vh;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      padding: 24px 32px;
+      background: #0f172a;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 24px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .modal-close-btn:hover {
+      color: #ffffff;
+    }
+    .modal-body {
+      padding: 32px;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: 20px 32px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      background: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-page" id="login-screen">
+    <div class="login-logo-wrapper">
+      <img src="SASTRA_Logo.jpg" alt="SASTRA Logo">
+      <img src="Greaves_Logo.jpg" alt="Greaves Logo">
+      <img src="Swati_Logo.jpg" alt="Swati Logo">
+      <img src="Pygmalion_Foundation_logo.jpg" alt="Pygmalion Logo">
+    </div>
+    <div class="login-container">
+      <div class="login-header">
+        <h2>SWATI WOMEN'S PROGRAM</h2>
+        <p>Sign in using authorized credentials only</p>
+      </div>
+      
+      <form id="login-form-node" onsubmit="event.preventDefault(); handleSystemLogin();">
+        <div class="form-group">
+          <label>USER ID</label>
+          <div class="input-wrapper">
+            <i class="fas fa-user-shield"></i>
+            <input type="text" id="login-uid" placeholder="Enter User ID" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>SECURITY PASSCODE</label>
+          <div class="input-wrapper">
+            <i class="fas fa-key"></i>
+            <input type="password" id="login-pass" placeholder="••••••••" required>
+          </div>
+        </div>
+        <button type="submit" class="submit-btn">LOGIN</button>
+      </form>
+      <div class="error-msg" id="login-error"></div>
+    </div>
+  </div>
+
+  <header class="global-logo-header" id="global-header" style="display: none;">
+    <div class="logo-container-flex">
+      <div style="display: flex; gap: 15px; align-items: center;">
+        <img src="SASTRA_Logo.jpg" alt="SASTRA Logo">
+        <img src="Greaves_Logo.jpg" alt="Greaves Logo">
+        <img src="Swati_Logo.jpg" alt="Swati Logo">
+        <img src="Pygmalion_Foundation_logo.jpg" alt="Pygmalion Logo">
+      </div>
+      <span class="mode-badge" id="mode-flag-badge">PORTAL HUB</span>
+    </div>
+  </header>
+
+  <div class="workspace-wrapper">
+    
+    <aside class="sidebar" id="main-sidebar">
+      <div class="sidebar-brand">
+        <i class="fas fa-graduation-cap"></i>
+        <span>Institute Console</span>
+      </div>
+      
+      <ul class="sidebar-menu">
+        <li class="menu-item active admin-only-opt" data-target="dashboard-section">
+          <i class="fas fa-th-large"></i> Dashboard Summary
+        </li>
+        <li class="menu-item admin-only-opt" data-target="user-management-section">
+          <i class="fas fa-users-cog"></i> User Credentials
+        </li>
+        <li class="menu-item admin-only-opt" data-target="course-management-section">
+          <i class="fas fa-book-open"></i> Course Registers
+        </li>
+        <li class="menu-item admin-only-opt" data-target="class-management-section">
+          <i class="fas fa-school"></i> Class Sectors
+        </li>
+        <li class="menu-item admin-only-opt" data-target="subject-management-section">
+          <i class="fas fa-journal-whills"></i> Subject Indexes
+        </li>
+        <li class="menu-item admin-only-opt" data-target="staff-management-section">
+          <i class="fas fa-chalkboard-teacher"></i> Faculty Register
+        </li>
+        <li class="menu-item admin-only-opt" data-target="subject-allocation-section">
+          <i class="fas fa-tasks"></i> Subject Allocation
+        </li>
+        <li class="menu-item admin-only-opt" data-target="student-management-section">
+          <i class="fas fa-user-graduate"></i> Student Profiles
+        </li>
+        <li class="menu-item admin-only-opt" data-target="timetable-creator-section">
+          <i class="fas fa-calendar-alt"></i> Matrix Planner
+        </li>
+
+        <li class="menu-item staff-only-opt" data-target="staff-dashboard-section" id="staff-sidebar-dashboard" style="display: none;">
+          <i class="fas fa-th-large"></i> Dashboard
+        </li>
+        <li class="menu-item staff-only-opt" data-target="staff-attendance-section" id="staff-sidebar-attendance" style="display: none;">
+          <i class="fas fa-clipboard-check"></i> Attendance Entry
+        </li>
+        <li class="menu-item staff-only-opt" data-target="marks-entry-management-section" id="staff-sidebar-marks" style="display: none;">
+          <i class="fas fa-marker"></i> Marks Registry
+        </li>
+        
+        <li class="menu-item" id="student-menu-profile" data-target="student-profile-section" style="display: none;">
+          <i class="fas fa-id-card"></i> My Profile
+        </li>
+      </ul>
+
+      <div style="margin-top: auto; padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 13px;">
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: 700; color: #ffffff;" id="user-display-tag">-</div>
+          <div style="font-size: 11px; color: #38bdf8; text-transform: uppercase;" id="role-display-tag">-</div>
+        </div>
+        
+        <button class="action-btn" id="cloud-sync-btn" onclick="syncAllFromGoogleSheets()" style="width: 100%; margin-bottom: 10px; background: #0284c7; padding: 10px; font-size: 12px;">
+          <i class="fas fa-cloud-download-alt"></i> Pull & Sync
+        </button>
+        <button class="logout-btn" onclick="handleLogout()" style="width: 100%; font-size: 12px; padding: 10px;">
+          <i class="fas fa-sign-out-alt"></i> Sign Out Session
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="main-content-area">
+      
+      <div id="dashboard-section" class="tab-content active">
+        <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+          <h1>Executive Console Panel</h1>
+          <button class="action-btn" onclick="openTimetableModalPopup()" style="background: #8b5cf6; display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 10px 18px;">
+            <i class="fas fa-calendar-alt"></i> View Timetable
+          </button>
+        </header>
+
+        <div class="profile-card" style="margin-bottom: 30px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <div class="info-tile" style="border-left: 4px solid #8b5cf6;">
+            <span>Total Faculty</span>
+            <p id="dash-count-staff" style="font-size: 24px; font-weight: 800;">0</p>
+          </div>
+          <div class="info-tile" style="border-left: 4px solid #ec4899;">
+            <span>Total Students</span>
+            <p id="dash-count-students" style="font-size: 24px; font-weight: 800;">0</p>
+          </div>
+          <div class="info-tile" style="border-left: 4px solid #06b6d4;">
+            <span>Total Dayscholar</span>
+            <p id="dash-count-dayscholar" style="font-size: 24px; font-weight: 800;">0</p>
+          </div>
+          <div class="info-tile" style="border-left: 4px solid #f59e0b;">
+            <span>Total Hosteler</span>
+            <p id="dash-count-hosteler" style="font-size: 24px; font-weight: 800;">0</p>
+          </div>
+        </div>
+
+        <div class="profile-card" style="margin-bottom: 30px;">
+          <div class="info-tile">
+            <span>ACTIVE SECURITY KEY STATUS</span>
+            <p style="color: #166534;"><i class="fas fa-check-circle"></i> Local Database Ready</p>
+          </div>
+          <div class="info-tile">
+            <span>DATABASE PIPELINE ACTION</span>
+            <p style="font-size: 13px; font-weight: 500; color: var(--slate-600); margin-top: 10px;">
+              Perform 'Pull & Sync' regularly to synchronize local changes to Cloud Spreadsheet.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="staff-dashboard-section" class="tab-content">
+        <header>
+          <h1>Staff Workspace Console</h1>
+        </header>
+        <div class="profile-card" style="margin-bottom: 30px;">
+          <div class="info-tile">
+            <span>Staff Name</span>
+            <p id="stf-dash-name">-</p>
+          </div>
+          <div class="info-tile">
+            <span>Staff ID</span>
+            <p id="stf-dash-id">-</p>
+          </div>
+          <div class="info-tile">
+            <span>Department</span>
+            <p id="stf-dash-dept">-</p>
+          </div>
+        </div>
+        <div class="data-section">
+          <h2>Your Assigned Subjects & Allocated Periods</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Subject Code</th>
+                  <th>Subject Name</th>
+                  <th>Allocated Class</th>
+                  <th>Assigned Periods (Timetable)</th>
+                </tr>
+              </thead>
+              <tbody id="stf-dash-allocations-tbody">
+                <tr><td colspan="4">No active allocations mapped.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="user-management-section" class="tab-content">
+        <header>
+          <h1>User Session Credentials</h1>
+        </header>
+        <div class="data-section">
+          <h2>Create / Edit User Account</h2>
+          <form id="user-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_USERS', ['user-uid', 'user-name', 'user-pass', 'user-role'], 'user-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>User Login ID (UID) *</label>
+                <input type="text" id="user-uid" placeholder="e.g. 2026101" required>
+              </div>
+              <div class="form-field-group">
+                <label>User's Real Full Name *</label>
+                <input type="text" id="user-name" placeholder="e.g. John Doe" required>
+              </div>
+              <div class="form-field-group">
+                <label>Security Password *</label>
+                <input type="password" id="user-pass" placeholder="••••••••" required>
+              </div>
+              <div class="form-field-group">
+                <label>Access Rule Assignment *</label>
+                <select id="user-role" required>
+                  <option value="">-- Choose Access Rule --</option>
+                  <option value="ADMIN">SYSTEM ADMINISTRATOR</option>
+                  <option value="STAFF">FACULTY INSTRUCTOR</option>
+                  <option value="STUDENT">UNDERGRAD STUDENT</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Account Settings</button>
+          </form>
+        </div>
+        
+        <div class="data-section">
+          <h2>System Account Records Database</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-user" placeholder="Search account profiles..." onkeyup="triggerSearchFilter('user-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>User Login ID</th>
+                  <th>User Full Name</th>
+                  <th>Role Scope</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="user-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="course-management-section" class="tab-content">
+        <header>
+          <h1>Academic Course Registers</h1>
+        </header>
+        <div class="data-section">
+          <h2>Register / Modify Course Code</h2>
+          <form id="course-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_COURSES', ['crs-code', 'crs-name', 'crs-dept'], 'course-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>Course Code *</label>
+                <input type="text" id="crs-code" placeholder="e.g. B.TECH-CSE" required>
+              </div>
+              <div class="form-field-group">
+                <label>Course Full Name *</label>
+                <input type="text" id="crs-name" placeholder="e.g. Computer Science Engineering" required>
+              </div>
+              <div class="form-field-group">
+                <label>Department Branch *</label>
+                <input type="text" id="crs-dept" placeholder="e.g. Engineering & IT" required>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Course Entry</button>
+          </form>
+        </div>
+
+        <div class="data-section">
+          <h2>Academic Course Index Register</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-course" placeholder="Search registered courses..." onkeyup="triggerSearchFilter('course-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Course Code</th>
+                  <th>Course Label Title</th>
+                  <th>Branch Dept</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="course-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="class-management-section" class="tab-content">
+        <header>
+          <h1>Class Sectors Configuration</h1>
+        </header>
+        <div class="data-section">
+          <h2>Setup New Class Division</h2>
+          <form id="class-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_CLASSES', ['cls-id', 'cls-name', 'cls-course-select', 'cls-dept'], 'class-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>Class ID Designation *</label>
+                <input type="text" id="cls-id" placeholder="e.g. CSE-A-Y3" required>
+              </div>
+              <div class="form-field-group">
+                <label>Class Name Label *</label>
+                <input type="text" id="cls-name" placeholder="e.g. CSE 3rd Year - Section A" required>
+              </div>
+              <div class="form-field-group">
+                <label>Mapped Academic Course *</label>
+                <select id="cls-course-select" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Managing Department *</label>
+                <input type="text" id="cls-dept" placeholder="e.g. Dept of Computing" required>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Class Entry</button>
+          </form>
+        </div>
+
+        <div class="data-section">
+          <h2>Academic Classes Register</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-class" placeholder="Search class designations..." onkeyup="triggerSearchFilter('class-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Class ID</th>
+                  <th>Class Label Title</th>
+                  <th>Mapped Course</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="class-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="subject-management-section" class="tab-content">
+        <header>
+          <h1>Subject Indexes Management</h1>
+        </header>
+        <div class="data-section">
+          <h2>Create New Subject Index</h2>
+          <form id="subject-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_SUBJECTS', ['sub-code', 'sub-name', 'sub-course-select', 'sub-dept'], 'subject-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>Subject Code Designation *</label>
+                <input type="text" id="sub-code" placeholder="e.g. CS601-ALGO" required>
+              </div>
+              <div class="form-field-group">
+                <label>Subject Title Label *</label>
+                <input type="text" id="sub-name" placeholder="e.g. Design & Analysis of Algorithms" required>
+              </div>
+              <div class="form-field-group">
+                <label>Associated Course Track *</label>
+                <select id="sub-course-select" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Managing Department *</label>
+                <input type="text" id="sub-dept" placeholder="e.g. Department of Computing" required>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Subject Registry</button>
+          </form>
+        </div>
+
+        <div class="data-section">
+          <h2>Institutional Subjects Ledger</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-subject" placeholder="Search subject ledgers..." onkeyup="triggerSearchFilter('subject-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Subject Code</th>
+                  <th>Subject Title Label</th>
+                  <th>Course Track</th>
+                  <th>Department Scope</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subject-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="staff-management-section" class="tab-content">
+        <header>
+          <h1>Faculty Management Panel</h1>
+        </header>
+        <div class="data-section">
+          <h2>Register / Modify Faculty Member</h2>
+          <form id="staff-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_STAFFS', ['stf-id', 'stf-name', 'stf-dept', 'stf-contact'], 'staff-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>Staff ID Assignment *</label>
+                <input type="text" id="stf-id" placeholder="e.g. STF-ALGO-01" required>
+              </div>
+              <div class="form-field-group">
+                <label>Faculty Full Name *</label>
+                <input type="text" id="stf-name" placeholder="e.g. Dr. Robert Vance" required>
+              </div>
+              <div class="form-field-group">
+                <label>Department Stream *</label>
+                <input type="text" id="stf-dept" placeholder="e.g. Computing Science" required>
+              </div>
+              <div class="form-field-group">
+                <label>Contact Info (Email/Phone) *</label>
+                <input type="text" id="stf-contact" placeholder="e.g. rvance@univ.edu" required>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Faculty Member</button>
+          </form>
+        </div>
+
+        <div class="data-section">
+          <h2>Registered Faculty Ledger</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-staff" placeholder="Search faculty list..." onkeyup="triggerSearchFilter('staff-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff ID</th>
+                  <th>Faculty Full Name</th>
+                  <th>Dept Stream</th>
+                  <th>Contact Info</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staff-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="subject-allocation-section" class="tab-content">
+        <header>
+          <h1>Subject Allocation Desk</h1>
+        </header>
+        <div class="data-section">
+          <h2>Assign Academic Subject & Faculty mapping</h2>
+          <form id="allocation-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_ALLOCATIONS', ['alloc-staff-select', 'alloc-class-select', 'alloc-sub-select'], 'allocation-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>Choose Faculty Instructor *</label>
+                <select id="alloc-staff-select" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Mapped Class Room *</label>
+                <select id="alloc-class-select" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Academic Subject Index *</label>
+                <select id="alloc-sub-select" required></select>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Assignment Mapping</button>
+          </form>
+        </div>
+
+        <div class="data-section">
+          <h2>Current Academic Allocations Matrix</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-allocations" placeholder="Search allocations..." onkeyup="triggerSearchFilter('allocation-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Faculty Member</th>
+                  <th>Class Unit</th>
+                  <th>Subject Code</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="allocation-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-management-section" class="tab-content">
+        <header>
+          <h1>Undergrad Student Profiles</h1>
+        </header>
+        <div class="data-section">
+          <h2>Enroll / Edit Student Record</h2>
+          <form id="student-creation-form" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_STUDENTS', ['std-id', 'std-name', 'std-class-select', 'std-course-select', 'std-status', 'std-dob', 'std-age', 'std-primary', 'std-secondary', 'std-10th', 'std-12th', 'std-accom', 'std-hostel-name', 'std-room', 'std-address', 'std-photo-hidden'], 'student-creation-form');">
+            <div class="form-grid-layout">
+              <div class="form-field-group">
+                <label>Student ID/Roll No *</label>
+                <input type="text" id="std-id" placeholder="e.g. 2026105001" required>
+              </div>
+              <div class="form-field-group">
+                <label>Student Full Name *</label>
+                <input type="text" id="std-name" placeholder="e.g. Arthur Pendragon" required>
+              </div>
+              <div class="form-field-group">
+                <label>Assigned Section Class *</label>
+                <select id="std-class-select" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Registered Course Track *</label>
+                <select id="std-course-select" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Profile Status *</label>
+                <select id="std-status" required>
+                  <option value="Active">Active</option>
+                  <option value="Dropped">Dropped</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div class="form-field-group">
+                <label>Date of Birth *</label>
+                <input type="date" id="std-dob" onchange="calculateStudentAgeRuntime()" required>
+              </div>
+              <div class="form-field-group">
+                <label>Calculated Age</label>
+                <input type="number" id="std-age" readonly style="background: #f1f5f9;">
+              </div>
+              <div class="form-field-group">
+                <label>Primary Contact (Phone) *</label>
+                <input type="text" id="std-primary" placeholder="Primary phone number" required>
+              </div>
+              <div class="form-field-group">
+                <label>Secondary Contact (Email/Alt)</label>
+                <input type="text" id="std-secondary" placeholder="Alternative details">
+              </div>
+              <div class="form-field-group">
+                <label>10th Standard Percentage (%) *</label>
+                <input type="number" step="0.01" id="std-10th" placeholder="e.g. 92.5" required>
+              </div>
+              <div class="form-field-group">
+                <label>12th Standard Percentage (%) *</label>
+                <input type="number" step="0.01" id="std-12th" placeholder="e.g. 94.2" required>
+              </div>
+              <div class="form-field-group">
+                <label>Accommodation Sector *</label>
+                <select id="std-accom" onchange="toggleHostelFieldsVisibility()" required>
+                  <option value="Dayscholar">Dayscholar Division</option>
+                  <option value="Hostel">Hostel Residence Sector</option>
+                </select>
+              </div>
+              <div class="form-field-group hostel-conditional-field" style="display: none;">
+                <label>Hostel Block Name *</label>
+                <input type="text" id="std-hostel-name" placeholder="e.g. Gargi Block">
+              </div>
+              <div class="form-field-group hostel-conditional-field" style="display: none;">
+                <label>Hostel Room Assignment *</label>
+                <input type="text" id="std-room" placeholder="e.g. Room 304">
+              </div>
+              <div class="form-field-group" style="grid-column: span 2;">
+                <label>Permanent Home Address *</label>
+                <textarea id="std-address" placeholder="Complete address data records..." rows="2" required></textarea>
+              </div>
+              <div class="form-field-group">
+                <label>Upload Student Photo *</label>
+                <input type="file" id="std-photo" accept="image/*" onchange="handlePhotoUpload(this)">
+                <input type="hidden" id="std-photo-hidden">
+                <div id="photo-preview-box" style="margin-top: 10px; width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #cbd5e1; display: none; overflow: hidden; align-items: center; justify-content: center;"></div>
+              </div>
+            </div>
+            <button type="submit" class="action-btn" style="margin-top: 20px;">Commit Student Enrollment</button>
+          </form>
+        </div>
+
+        <div class="data-section">
+          <h2>Enrolled Student Database</h2>
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-student" placeholder="Search student directory..." onkeyup="triggerSearchFilter('student-table-body')">
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Roll No ID</th>
+                  <th>Student Name</th>
+                  <th>Class Sector</th>
+                  <th>Course Code</th>
+                  <th>Status State</th>
+                  <th>DOB</th>
+                  <th>Age Track</th>
+                  <th>Accom Mode</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="student-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="timetable-creator-section" class="tab-content">
+        <header>
+          <h1>Academic Matrix Timetable Planner</h1>
+        </header>
+        
+        <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+          <button type="button" class="action-btn" onclick="toggleTimetablePlannerMode('create')" style="background: var(--slate-800);">Configure Timetable Slots</button>
+          <button type="button" class="action-btn" onclick="toggleTimetablePlannerMode('existing')" style="background: var(--sky-600);">View Existing Schedule Matrix</button>
+        </div>
+
+        <div class="data-section" id="tt-configure-block" style="display: none;">
+          <h2>Dynamic Period Allocation</h2>
+          <form id="timetable-config-form" onsubmit="event.preventDefault(); saveTimetableRecord();">
+            <div class="inline-form" style="grid-template-columns: repeat(2, 1fr); gap: 20px; align-items: start; margin-bottom: 25px;">
+              <div class="form-field-group">
+                <label>Target Class Division *</label>
+                <select id="tt-class-select" onchange="renderTimetableGridDisplay()" required></select>
+              </div>
+              <div class="form-field-group">
+                <label>Day Reference Selector *</label>
+                <select id="tt-day-select" required>
+                  <option value="">-- Choose Target Day --</option>
+                  <option value="MONDAY">MONDAY</option>
+                  <option value="TUESDAY">TUESDAY</option>
+                  <option value="WEDNESDAY">WEDNESDAY</option>
+                  <option value="THURSDAY">THURSDAY</option>
+                  <option value="FRIDAY">FRIDAY</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <script>
+                for(let h=1; h<=7; h++) {
+                  document.write(`
+                    <div style="background: var(--slate-50); padding: 20px; border-radius: 12px; border: 1px solid var(--slate-200);">
+                      <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--slate-800); font-weight: 700;">Hour Allocation ${h} Slot</h4>
+                      <div class="form-grid-layout" style="grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                        <div class="form-field-group">
+                          <label>Subject Mapped</label>
+                          <select id="tt-sub-h${h}"></select>
+                        </div>
+                        <div class="form-field-group">
+                          <label>Primary Instructor</label>
+                          <select id="tt-staff1-h${h}"></select>
+                        </div>
+                        <div class="form-field-group">
+                          <label>Co-Staff A</label>
+                          <select id="tt-staff2-h${h}"></select>
+                        </div>
+                        <div class="form-field-group">
+                          <label>Co-Staff B</label>
+                          <select id="tt-staff3-h${h}"></select>
+                        </div>
+                      </div>
+                    </div>
+                  `);
+                }
+              </script>
+            </div>
+
+            <button type="submit" class="action-btn" style="margin-top: 25px; width: 100%;">Commit Full Day Slots</button>
+          </form>
+        </div>
+
+        <div class="data-section" id="tt-matrix-block" style="display: none;">
+          <h2>Class Schedule Grid Monitor</h2>
+          <div class="tt-grid" id="tt-matrix-runtime-grid"></div>
+        </div>
+      </div>
+
+      <div id="staff-attendance-section" class="tab-content">
+        <header>
+          <h1>Daily Class Attendance Register</h1>
+        </header>
+        <div class="data-section">
+          <h2>Capture Verification Entries</h2>
+          <div class="inline-form" style="grid-template-columns: repeat(2, 1fr) 200px; gap: 20px;">
+            <div class="form-field-group">
+              <label>Select Target Calendar Date *</label>
+              <input type="date" id="att-date-picker" onchange="generateAttendanceRegisterForm()">
+            </div>
+            <div class="form-field-group">
+              <label>Select Allocated Class *</label>
+              <select id="att-class-select" onchange="generateAttendanceRegisterForm()"></select>
+            </div>
+            <button type="button" class="action-btn" onclick="saveFacultyAttendanceRegister()" style="background: #059669;">Synchronize Sheet</button>
+          </div>
+          
+          <div id="att-students-list-view" style="margin-top: 30px;">
+            <p style="color: var(--slate-400);">Choose target class sector first.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="marks-entry-management-section" class="tab-content">
+        <header>
+          <h1>Marks Registry Matrix Ledger</h1>
+        </header>
+        <div class="data-section">
+          <h2>Student Internal Performance Record</h2>
+          <div class="inline-form" style="grid-template-columns: repeat(2, 1fr) 200px; gap: 20px;">
+            <div class="form-field-group">
+              <label>Class Room *</label>
+              <select id="marks-class-select" onchange="filterSubjectsForMarksEntry()" required></select>
+            </div>
+            <div class="form-field-group">
+              <label>Subject Index *</label>
+              <select id="marks-subject-select" onchange="loadMarksEntrySheet()" required>
+                <option value="">-- Select Subject --</option>
+              </select>
+            </div>
+            <button type="button" class="action-btn" onclick="saveStudentsMarksRegister()" style="background: #0284c7;">Save Performance Matrix</button>
+          </div>
+
+          <div id="marks-entry-container" class="table-container" style="margin-top: 30px;">
+            <p style="color: var(--slate-400); padding: 15px;">Select Class Room and Mapped Subject parameters to load terminal sheet matrix editor.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-profile-section" class="tab-content">
+        <header>
+          <h1>Student Profile Hub</h1>
+        </header>
+        
+        <div class="student-header-block">
+          <div class="student-photo-frame" id="p-student-photo-frame">
+            <i class="fas fa-user-graduate"></i>
+          </div>
+          <div class="student-meta-summary">
+            <h3 id="p-student-name">-</h3>
+            <p style="color: var(--sky-600); font-weight: 700; margin-top: 4px;" id="p-student-id">-</p>
+          </div>
+        </div>
+
+        <div class="data-section">
+          <h2>Personal & Academic Data Matrix</h2>
+          <div class="profile-card">
+            <div class="info-tile"><span>Enrolled Class</span><p id="p-class-name">-</p></div>
+            <div class="info-tile"><span>Course Track</span><p id="p-course-name">-</p></div>
+            <div class="info-tile"><span>Status Badge</span><p id="p-status">-</p></div>
+            <div class="info-tile"><span>Date of Birth</span><p id="p-dob">-</p></div>
+            <div class="info-tile"><span>Calculated Age</span><p id="p-age">-</p></div>
+            <div class="info-tile"><span>Primary Cell Contact</span><p id="p-primary">-</p></div>
+            <div class="info-tile"><span>Alt Email Reference</span><p id="p-secondary">-</p></div>
+            <div class="info-tile"><span>Prior Scholastic Marks</span><p id="p-marks">-</p></div>
+            <div class="info-tile"><span>Accommodation Mode</span><p id="p-accommodation">-</p></div>
+            <div class="info-tile" style="grid-column: span 2;"><span>Permanent Home Address</span><p id="p-address">-</p></div>
+          </div>
+        </div>
+
+        <div class="data-section">
+          <h2>Live Attendance Monitor</h2>
+          <div class="profile-card" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 25px;">
+            <div class="info-tile" style="border-left: 4px solid var(--slate-500);"><span>Total Sessions Captured</span><p id="p-total-days">0</p></div>
+            <div class="info-tile" style="border-left: 4px solid #166534;"><span>Present Count</span><p id="p-present-days">0</p></div>
+            <div class="info-tile" style="border-left: 4px solid #991b1b;"><span>Absent Count</span><p id="p-absent-days">0</p></div>
+            <div class="info-tile" style="border-left: 4px solid var(--sky-500);"><span>Net Aggregation Metric</span><p id="p-percentage">100%</p></div>
+          </div>
+          
+          <h3>Comprehensive Verification Log Ledger</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Logged Date</th>
+                  <th>Hour Identifier</th>
+                  <th>Captured State</th>
+                  <th>Marked By Instructor</th>
+                </tr>
+              </thead>
+              <tbody id="student-att-history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="timetable-popup-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>Class Timetable Matrix Monitor Viewer</h3>
+        <button class="modal-close-btn" onclick="closeTimetableModalPopup()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field-group" style="max-width: 400px; margin-bottom: 20px;">
+          <label>Choose Target Class Matrix Unit</label>
+          <select id="modal-tt-class-select" onchange="renderModalTimetableGrid()"></select>
+        </div>
+        <div class="tt-grid" id="modal-tt-runtime-grid"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn" onclick="closeTimetableModalPopup()" style="background: var(--slate-800);">Dismiss Window View</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
