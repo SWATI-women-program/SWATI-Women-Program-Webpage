@@ -1070,20 +1070,37 @@ function loadMarksEntrySheet() {
 
   let html = `
     <table>
-      <thead><tr><th>Roll No</th><th>Name</th><th>CIA 1 (20)</th><th>CIA 2 (20)</th><th>CIA 3 (20)</th><th>Assgn (10)</th><th>Att (30)</th><th>Total (100)</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>CIA 1 (20)</th>
+          <th>CIA 2 (20)</th>
+          <th>CIA 3 (20)</th>
+          <th>Assgn (5)</th>
+          <th>Att (5)</th>
+          <th>Semester (100)</th>
+          <th>Total (100)</th>
+        </tr>
+      </thead>
       <tbody>`;
 
   classStudents.forEach(st => {
+    // SYSTEM_SCHEMA படி: ["StudentID", "SubjectCode", "CIA1", "CIA2", "CIA3", "Assignment", "Attendance", "Semester", "Total", "RecordID"]
+    // record[7] என்பது Semester, record[8] என்பது Total
     let record = marksList.find(m => m[0] === st[0] && m[1] === subCode) || ["", "", "0", "0", "0", "0", "0", "0", "0"];
+    
     html += `
       <tr class="marks-row-node" data-student-id="${st[0]}">
-        <td><strong>${st[0]}</strong></td><td>${st[1]}</td>
-        <td><input type="number" class="marks-input cia1" value="${record[2]}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
-        <td><input type="number" class="marks-input cia2" value="${record[3]}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
-        <td><input type="number" class="marks-input cia3" value="${record[4]}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
-        <td><input type="number" class="marks-input assgn" value="${record[5]}" min="0" max="10" oninput="calculateRowTotalMarks(this)"></td>
-        <td><input type="number" class="marks-input atten" value="${record[6]}" min="0" max="30" oninput="calculateRowTotalMarks(this)"></td>
-        <td><input type="number" class="marks-input total-score" value="${record[8]}" readonly style="background:#e2e8f0; font-weight:700;"></td>
+        <td><strong>${st[0]}</strong></td>
+        <td>${st[1]}</td>
+        <td><input type="number" class="marks-input cia1" value="${record[2] || 0}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input cia2" value="${record[3] || 0}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input cia3" value="${record[4] || 0}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input assgn" value="${record[5] || 0}" min="0" max="5" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input atten" value="${record[6] || 0}" min="0" max="5" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input semester-mark" value="${record[7] || 0}" min="0" max="100" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input total-score" value="${record[8] || 0}" readonly style="background:#e2e8f0; font-weight:700;"></td>
       </tr>`;
   });
 
@@ -1093,12 +1110,31 @@ function loadMarksEntrySheet() {
 
 function calculateRowTotalMarks(inputNode) {
   const row = inputNode.closest(".marks-row-node");
+  
+  // மதிப்பெண்களை வாங்குதல்
   const c1 = parseFloat(row.querySelector(".cia1").value) || 0;
   const c2 = parseFloat(row.querySelector(".cia2").value) || 0;
   const c3 = parseFloat(row.querySelector(".cia3").value) || 0;
   const as = parseFloat(row.querySelector(".assgn").value) || 0;
   const at = parseFloat(row.querySelector(".atten").value) || 0;
-  row.querySelector(".total-score").value = c1 + c2 + c3 + as + at;
+  const sem = parseFloat(row.querySelector(".semester-mark").value) || 0;
+
+  // Best of Two CIA கண்டுபிடித்தல்
+  const ciaMarks = [c1, c2, c3];
+  ciaMarks.sort((a, b) => b - a); // அதிக மதிப்பெண் அடிப்படையில் வரிசைப்படுத்துதல்
+  const bestTwoCiaSum = ciaMarks[0] + ciaMarks[1];
+
+  // இன்டர்னல் மதிப்பெண் (Max 50)
+  const internalTotal = bestTwoCiaSum + as + at;
+
+  // செமஸ்டர் மதிப்பெண் 100-ஐ 50-க்கு மாற்றுதல்
+  const semesterConverted = sem / 2;
+
+  // இறுதி மதிப்பெண் (Max 100)
+  const finalTotal = internalTotal + semesterConverted;
+
+  // ரவுண்ட் அப் செய்து அவுட்புட் பாக்ஸில் காட்டுதல்
+  row.querySelector(".total-score").value = Math.round(finalTotal * 100) / 100;
 }
 
 async function saveStudentsMarksRegister() {
