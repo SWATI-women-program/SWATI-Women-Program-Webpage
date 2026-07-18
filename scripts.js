@@ -771,26 +771,26 @@ function renderStaffDashboardConsole() {
               let checkKey = `${targetSubjectCode}_P${hr}`;
               let attendanceRecord = attendanceLogs.find(log => log[0] === activeDate && log[1] === checkKey && log[2] === targetClass);
               
-              // இங்க தான் Badge-ல் Click Event மற்றும் Pointer Cursor சேர்க்கப்பட்டுள்ளது
+              // பக் பிக்ஸ்: onclick நிகழ்வை சுற்றியிருந்த சிங்கிள் கோட்ஸில் இருந்த சிக்கல் சரிசெய்யப்பட்டு, ஸ்பான் டேக் மற்றும் டெக்ஸ்ட் இரண்டிற்கும் கர்சர் பாயிண்டர் கொடுக்கப்பட்டுள்ளது.
               let statusLabel = attendanceRecord 
-                ? ` <span onclick="redirectToAttendanceDirectly('${targetClass}', '${targetSubjectCode}', ${hr})" style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">COMPLETED</span>`
-                : ` <span onclick="redirectToAttendanceDirectly('${targetClass}', '${targetSubjectCode}', ${hr})" style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">PENDING</span>`;
+                ? ` <span onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})" style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">COMPLETED</span>`
+                : ` <span onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})" style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">PENDING</span>`;
               
-              matchingPeriods.push(`${tt[1]} (Hour ${hr})${statusLabel}`);
+              // முழு லைனுமே கிளிக் ஆகும் படி மாத்தப்பட்டுள்ளது
+              matchingPeriods.push(`<div style="cursor:pointer; padding:2px 0;" onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})">${tt[1]} (Hour ${hr})${statusLabel}</div>`);
             }
           }
         }
       }
     });
 
-    let periodsLabel = matchingPeriods.length > 0 ? matchingPeriods.join("<br/>") : "<em>Not Scheduled</em>";
+    let periodsLabel = matchingPeriods.length > 0 ? matchingPeriods.join("") : "<em>Not Scheduled</em>";
     allocationTbody.insertAdjacentHTML("beforeend", `
       <tr><td><strong>${targetSubjectCode}</strong></td><td>${subName}</td><td>${targetClass}</td><td>${periodsLabel}</td></tr>
     `);
   });
 }
 
-// புதிதாக சேர்க்கப்பட்டுள்ள Redirect & Automate செய்யும் ஃபங்க்ஷன்
 function redirectToAttendanceDirectly(classId, subjectCode, hourNumber) {
   // 1. Attendance Entry டேப்-க்கு மாற்றவும்
   triggerNavigationTabChange("staff-attendance-section");
