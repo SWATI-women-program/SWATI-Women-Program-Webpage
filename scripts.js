@@ -32,7 +32,8 @@ let editingRowIndices = {
   STUDENT_MARKS: -1
 };
 
-window.addEventListener("DOMContentLoaded", () => {
+// ** UPDATED FUNCTION WITH AUTOMATIC BACKGROUND PULL & SYNC ON LOAD **
+window.addEventListener("DOMContentLoaded", async () => {
   initializeLocalDatabases();
   setupGlobalEvents();
   autoLoginIfSessionExists();
@@ -40,6 +41,38 @@ window.addEventListener("DOMContentLoaded", () => {
   const datePicker = document.getElementById("att-date-picker");
   if (datePicker && !datePicker.value) {
     datePicker.value = new Date().toISOString().split('T')[0];
+  }
+
+  // Auto Pulling latest user credentials from Google Sheets silently for new users/friends
+  console.log("System Initializing: Fetching data from Google Sheets...");
+  if (!syncInProgressState) {
+    setGlobalSyncState(true);
+    fetch(`${DEPLOYMENT_WEB_APP_URL}?action=fetchAll`)
+      .then(res => res.json())
+      .then(networkData => {
+        if (networkData.status === "error") {
+          console.warn("Auto-Pull Background Engine Error: " + networkData.message);
+          return;
+        }
+        Object.keys(SYSTEM_SCHEMA).forEach(key => {
+          let backendSheetName = sheetTabForKey(key);
+          if (backendSheetName && networkData[backendSheetName]) {
+            localStorage.setItem(key, JSON.stringify(networkData[backendSheetName]));
+          }
+        });
+        renderAllTables();
+        refreshFormDropdownLists();
+        if(activeUserSession.role === "STUDENT") {
+          renderStudentSelfProfileViewer();
+        } else if (activeUserSession.role === "STAFF") {
+          renderStaffDashboardConsole();
+        }
+        console.log("System database successfully auto-synchronized on page startup!");
+      })
+      .catch(err => {
+        console.error("Connection failure with backend server during auto-sync:", err);
+      })
+      .finally(() => setGlobalSyncState(false));
   }
 });
 
@@ -587,7 +620,7 @@ function saveTimetableRecord() {
   let ttList = JSON.parse(localStorage.getItem("CLASS_TIMETABLES")) || [];
   let existingIndex = ttList.findIndex(row => row[0] === classId && row[1] === targetDay);
 
-  let recordId = existingIndex > -1 ? ttList[existingIndex][ttList[existingIndex].length - 1] : "REC-" + Date.now();
+  let recordId = existingIndex > -1 ? ttList[existingIndex][ttList[existingIndex].length - 1] : "REC-TIM-" + Date.now();
   dynamicPayload.push(recordId);
   
   if (existingIndex > -1) ttList[existingIndex] = dynamicPayload;
