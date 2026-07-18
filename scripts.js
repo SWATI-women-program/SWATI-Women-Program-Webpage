@@ -1,5 +1,5 @@
 /* ==========================================================================
-   INSTITUTIONAL CORE SYSTEM ENGINE (MODULAR RUNTIME) - OPTIMIZED WITH PHOTO UPLOADER
+   INSTITUTIONAL CORE SYSTEM ENGINE (MODULAR RUNTIME)
    ========================================================================== */
 
 const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbypV-SgefCuYdIwGlMDXxpFYA8qXGE3nX2dTFoHukhxeW7w64q3rD5uFmXPzOjQCa6J/exec"; 
@@ -20,21 +20,14 @@ const SYSTEM_SCHEMA = {
 let activeUserSession = { role: "", uid: "", name: "" };
 let syncInProgressState = false;
 let editingRowIndices = {
-  MASTER_USERS: -1,
-  MASTER_COURSES: -1,
-  MASTER_CLASSES: -1,
-  MASTER_SUBJECTS: -1,
-  MASTER_STAFFS: -1,
-  MASTER_ALLOCATIONS: -1,
-  MASTER_STUDENTS: -1,
-  CLASS_TIMETABLES: -1,
-  DAILY_ATTENDANCE: -1,
-  STUDENT_MARKS: -1
+  MASTER_USERS: -1, MASTER_COURSES: -1, MASTER_CLASSES: -1, MASTER_SUBJECTS: -1,
+  MASTER_STAFFS: -1, MASTER_ALLOCATIONS: -1, MASTER_STUDENTS: -1, CLASS_TIMETABLES: -1,
+  DAILY_ATTENDANCE: -1, STUDENT_MARKS: -1
 };
 
-// ** UPDATED FUNCTION WITH AUTOMATIC BACKGROUND PULL & SYNC ON LOAD **
 window.addEventListener("DOMContentLoaded", async () => {
   initializeLocalDatabases();
+  generateTimetableSlotsUI();
   setupGlobalEvents();
   autoLoginIfSessionExists();
   
@@ -43,7 +36,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     datePicker.value = new Date().toISOString().split('T')[0];
   }
 
-  // Auto Pulling latest user credentials from Google Sheets silently for new users/friends
   console.log("System Initializing: Fetching data from Google Sheets...");
   if (!syncInProgressState) {
     setGlobalSyncState(true);
@@ -82,6 +74,25 @@ function initializeLocalDatabases() {
       localStorage.setItem(key, JSON.stringify([]));
     }
   });
+}
+
+function generateTimetableSlotsUI() {
+  const container = document.getElementById("timetable-slots-dynamic-container");
+  if (!container) return;
+  container.innerHTML = "";
+  for(let h=1; h<=7; h++) {
+    container.insertAdjacentHTML('beforeend', `
+      <div style="background: var(--slate-50); padding: 20px; border-radius: 12px; border: 1px solid var(--slate-200);">
+        <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--slate-800); font-weight: 700;">Hour Allocation ${h} Slot</h4>
+        <div class="form-grid-layout" style="grid-template-columns: repeat(4, 1fr); gap: 15px;">
+          <div class="form-field-group"><label>Subject Mapped</label><select id="tt-sub-h${h}"></select></div>
+          <div class="form-field-group"><label>Primary Instructor</label><select id="tt-staff1-h${h}"></select></div>
+          <div class="form-field-group"><label>Co-Staff A</label><select id="tt-staff2-h${h}"></select></div>
+          <div class="form-field-group"><label>Co-Staff B</label><select id="tt-staff3-h${h}"></select></div>
+        </div>
+      </div>
+    `);
+  }
 }
 
 function setupGlobalEvents() {
@@ -232,11 +243,7 @@ async function syncWithGoogleSheet(sheetTab, payload, headers, action, recordId 
   if (!DEPLOYMENT_WEB_APP_URL) return;
   
   const requestBody = {
-    tabName: sheetTab,       
-    action: action,
-    payload: payload,
-    headers: headers,
-    rowId: recordId          
+    tabName: sheetTab, action: action, payload: payload, headers: headers, rowId: recordId          
   };
 
   try {
@@ -256,17 +263,12 @@ async function syncWithGoogleSheet(sheetTab, payload, headers, action, recordId 
 function renderAdminDashboardSummary() {
   const staff = JSON.parse(localStorage.getItem("MASTER_STAFFS")) || [];
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
-
-  let dayscholarCount = 0;
-  let hostelerCount = 0;
+  let dayscholarCount = 0, hostelerCount = 0;
   
   students.forEach(student => {
     let accommodation = student[11] ? String(student[11]).trim().toLowerCase() : "";
-    if (accommodation === "dayscholar") {
-      dayscholarCount++;
-    } else if (accommodation === "hostel") {
-      hostelerCount++;
-    }
+    if (accommodation === "dayscholar") dayscholarCount++;
+    else if (accommodation === "hostel") hostelerCount++;
   });
 
   const staffEl = document.getElementById("dash-count-staff");
@@ -280,17 +282,11 @@ function renderAdminDashboardSummary() {
   if (hostelerEl) hostelerEl.innerText = hostelerCount;
 }
 
-function sheetTabForKey(key, optionalRowData = null) {
+function sheetTabForKey(key) {
   const map = {
-    MASTER_USERS: "Master_Users",
-    MASTER_COURSES: "Master_Courses",
-    MASTER_CLASSES: "Master_Classes",
-    MASTER_SUBJECTS: "Master_Subjects",
-    MASTER_STAFFS: "Master_Staffs",
-    MASTER_ALLOCATIONS: "Master_Allocations", 
-    MASTER_STUDENTS: "Master_Students",
-    CLASS_TIMETABLES: "Class_Timetables",
-    DAILY_ATTENDANCE: "Daily_Class_Attendance",
+    MASTER_USERS: "Master_Users", MASTER_COURSES: "Master_Courses", MASTER_CLASSES: "Master_Classes",
+    MASTER_SUBJECTS: "Master_Subjects", MASTER_STAFFS: "Master_Staffs", MASTER_ALLOCATIONS: "Master_Allocations", 
+    MASTER_STUDENTS: "Master_Students", CLASS_TIMETABLES: "Class_Timetables", DAILY_ATTENDANCE: "Daily_Class_Attendance",
     STUDENT_MARKS: "Student_Marks"
   };
   return map[key] || "";
@@ -336,20 +332,17 @@ function applyAuthorizationRules(role, name) {
 
   const adminMenuOpts = document.querySelectorAll(".admin-only-opt");
   const staffMenuOpts = document.querySelectorAll(".staff-only-opt");
-  const adminAttType = document.getElementById("admin-att-type-wrapper");
 
   if (role === "ADMIN") {
     adminMenuOpts.forEach(el => el.style.display = "flex");
     staffMenuOpts.forEach(el => el.style.display = "none"); 
     document.getElementById("student-menu-profile").style.display = "none";
-    if (adminAttType) adminAttType.style.display = "flex"; 
     document.getElementById("mode-flag-badge").innerText = "ADMIN PORTAL";
     triggerNavigationTabChange("dashboard-section");
   } else if (role === "STAFF") {
     adminMenuOpts.forEach(el => el.style.display = "none");
     staffMenuOpts.forEach(el => el.style.display = "flex"); 
     document.getElementById("student-menu-profile").style.display = "none";
-    if (adminAttType) adminAttType.style.display = "none"; 
     document.getElementById("mode-flag-badge").innerText = "FACULTY PORTAL";
     renderStaffDashboardConsole();
     triggerNavigationTabChange("staff-dashboard-section");
@@ -441,8 +434,7 @@ function handleFormSubmission(tblKey, inputControlIds, resetFormElementId = null
   });
 
   if (tblKey === "MASTER_STUDENTS" && document.getElementById("std-accom").value === "Dayscholar") {
-    formValues[12] = ""; 
-    formValues[13] = ""; 
+    formValues[12] = ""; formValues[13] = ""; 
   }
 
   let activeIndex = editingRowIndices[tblKey];
@@ -455,14 +447,14 @@ function handleFormSubmission(tblKey, inputControlIds, resetFormElementId = null
     valuesMatrix[activeIndex] = formValues;
     editingRowIndices[tblKey] = -1;
 
-    let targetTab = sheetTabForKey(tblKey, formValues);
+    let targetTab = sheetTabForKey(tblKey);
     if (targetTab) syncWithGoogleSheet(targetTab, formValues, SYSTEM_SCHEMA[tblKey], "UPDATE", recordId);
   } else {
     recordId = "REC-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     formValues.push(recordId);
     valuesMatrix.push(formValues);
 
-    let targetTab = sheetTabForKey(tblKey, formValues);
+    let targetTab = sheetTabForKey(tblKey);
     if (targetTab) syncWithGoogleSheet(targetTab, formValues, SYSTEM_SCHEMA[tblKey], "CREATE");
   }
 
@@ -505,19 +497,35 @@ function handleUniversalEdit(tblKey, rowIdx, inputControlIds) {
   alert("Row parameters successfully bound to UI editors! Edit and commit form.");
 }
 
-function renderAllTables() {
-  renderDatasetToTable("user-table-body", "MASTER_USERS", [0, 1, 3], ["UID", "Name", "Role"]);
-  renderDatasetToTable("course-table-body", "MASTER_COURSES", [0, 1, 2], ["Course Code", "Course Name", "Dept"]);
-  renderDatasetToTable("class-table-body", "MASTER_CLASSES", [0, 1, 2], ["Class ID", "Class Name", "Course Code"]);
-  renderDatasetToTable("subject-table-body", "MASTER_SUBJECTS", [0, 1, 2, 3], ["Subject Code", "Subject Name", "Course Code", "Dept"]);
-  renderDatasetToTable("staff-table-body", "MASTER_STAFFS", [0, 1, 2, 3], ["Staff ID", "Name", "Dept", "Contact"]);
-  renderDatasetToTable("allocation-table-body", "MASTER_ALLOCATIONS", [0, 1, 2], ["Faculty", "Class ID", "Subject Code"]);
-  renderDatasetToTable("student-table-body", "MASTER_STUDENTS", [0, 1, 2, 3, 4, 5, 6, 11], ["ID", "Name", "Class", "Course", "Status", "DOB", "Age", "Accom"]);
+function handleUniversalDelete(tblKey, rowIdx) {
+  if(!confirm("Are you sure you want to delete this record?")) return;
+  let valuesMatrix = JSON.parse(localStorage.getItem(tblKey)) || [];
+  let targetRowData = valuesMatrix[rowIdx];
+  if (!targetRowData) return;
   
+  let recordId = targetRowData[targetRowData.length - 1];
+  valuesMatrix.splice(rowIdx, 1);
+  localStorage.setItem(tblKey, JSON.stringify(valuesMatrix));
+  
+  let targetTab = sheetTabForKey(tblKey);
+  if (targetTab) syncWithGoogleSheet(targetTab, targetRowData, SYSTEM_SCHEMA[tblKey], "DELETE", recordId);
+  
+  renderAllTables();
+  refreshFormDropdownLists();
+}
+
+function renderAllTables() {
+  renderDatasetToTable("user-table-body", "MASTER_USERS", [0, 1, 3]);
+  renderDatasetToTable("course-table-body", "MASTER_COURSES", [0, 1, 2]);
+  renderDatasetToTable("class-table-body", "MASTER_CLASSES", [0, 1, 2]);
+  renderDatasetToTable("subject-table-body", "MASTER_SUBJECTS", [0, 1, 2, 3]);
+  renderDatasetToTable("staff-table-body", "MASTER_STAFFS", [0, 1, 2, 3]);
+  renderDatasetToTable("allocation-table-body", "MASTER_ALLOCATIONS", [0, 1, 2]);
+  renderDatasetToTable("student-table-body", "MASTER_STUDENTS", [0, 1, 2, 3, 4, 5, 6, 11]);
   renderAdminDashboardSummary();
 }
 
-function renderDatasetToTable(tbodyId, tblKey, displayColIndices, headerLabels) {
+function renderDatasetToTable(tbodyId, tblKey, displayColIndices) {
   const tbodyNode = document.getElementById(tbodyId);
   if (!tbodyNode) return;
   tbodyNode.innerHTML = "";
@@ -565,19 +573,15 @@ function renderDatasetToTable(tbodyId, tblKey, displayColIndices, headerLabels) 
 
 function getSearchFilterText(tbodyId) {
   const searchInputsMap = {
-    "user-table-body": "search-user",
-    "course-table-body": "search-course",
-    "class-table-body": "search-class",
-    "subject-table-body": "search-subject",
-    "staff-table-body": "search-staff",
-    "allocation-table-body": "search-allocations",
+    "user-table-body": "search-user", "course-table-body": "search-course", "class-table-body": "search-class",
+    "subject-table-body": "search-subject", "staff-table-body": "search-staff", "allocation-table-body": "search-allocations",
     "student-table-body": "search-student"
   };
   const el = document.getElementById(searchInputsMap[tbodyId]);
   return el ? el.value.trim().toLowerCase() : "";
 }
 
-function triggerSearchFilter(tbodyId) {
+function triggerSearchFilter() {
   renderAllTables();
 }
 
@@ -638,15 +642,42 @@ function renderTimetableGridDisplay() {
   const classId = document.getElementById("tt-class-select").value;
   const gridContainer = document.getElementById("tt-matrix-runtime-grid");
   if (!gridContainer || !classId) return;
+  buildTimetableGridStructure(gridContainer, classId);
+}
 
+function openTimetableModalPopup() {
+  const modal = document.getElementById("timetable-popup-modal");
+  if (modal) {
+    modal.style.display = "flex";
+    renderModalTimetableGrid(); 
+  }
+}
+
+function closeTimetableModalPopup() {
+  const modal = document.getElementById("timetable-popup-modal");
+  if (modal) modal.style.display = "none";
+}
+
+function renderModalTimetableGrid() {
+  const classId = document.getElementById("modal-tt-class-select").value;
+  const gridContainer = document.getElementById("modal-tt-runtime-grid");
+  if (!gridContainer) return;
+
+  if (!classId) {
+    gridContainer.innerHTML = `<p style="grid-column: span 11; text-align: center; color: var(--slate-400); padding: 40px 0;">Please select a class from the dropdown above to display its timetable grid.</p>`;
+    return;
+  }
+  buildTimetableGridStructure(gridContainer, classId);
+}
+
+function buildTimetableGridStructure(gridContainer, classId) {
   gridContainer.innerHTML = "";
   const ttList = JSON.parse(localStorage.getItem("CLASS_TIMETABLES")) || [];
   const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
-
   const timeLabels = [
     "08:45-09:45\n(Period 1)", "09:45-10:45\n(Period 2)", "10:45-11:00\n(BREAK)",
     "11:00-12:00\n(Period 3)", "12:00-01:00\n(Period 4)", "01:00-02:00\n(LUNCH)",
-    "02:00-03:00\n(Period 5)", "03:00-03:15\n(BREAK)", "03:15-04:15\n(Period 6)", "04:15-05:16\n(Period 7)"
+    "02:00-03:00\n(Period 5)", "03:00-03:15\n(BREAK)", "03:15-04:15\n(Period 6)", "04:15-05:15\n(Period 7)"
   ];
 
   gridContainer.appendChild(createHeaderCell("DAY / TIMINGS"));
@@ -659,29 +690,18 @@ function renderTimetableGridDisplay() {
     gridContainer.appendChild(dayRowCell);
 
     let mappedDayData = ttList.find(row => row[0] === classId && row[1] === dayName);
-    
     let periodTrackingCounter = 1;
+
     for (let currentSlot = 1; currentSlot <= 10; currentSlot++) {
-      if (currentSlot === 3) {
+      if (currentSlot === 3 || currentSlot === 8) {
         let breakCell = document.createElement("div");
-        breakCell.className = "tt-cell tt-break";
-        breakCell.innerText = "BREAK";
-        gridContainer.appendChild(breakCell);
-        continue;
+        breakCell.className = "tt-cell tt-break"; breakCell.innerText = "BREAK";
+        gridContainer.appendChild(breakCell); continue;
       }
       if (currentSlot === 6) {
         let lunchBreak = document.createElement("div");
-        lunchBreak.className = "tt-cell tt-break";
-        lunchBreak.innerText = "LUNCH";
-        gridContainer.appendChild(lunchBreak);
-        continue;
-      }
-      if (currentSlot === 8) {
-        let breakCell = document.createElement("div");
-        breakCell.className = "tt-cell tt-break";
-        breakCell.innerText = "BREAK";
-        gridContainer.appendChild(breakCell);
-        continue;
+        lunchBreak.className = "tt-cell tt-break"; lunchBreak.innerText = "LUNCH";
+        gridContainer.appendChild(lunchBreak); continue;
       }
 
       let cellValue = mappedDayData ? mappedDayData[periodTrackingCounter + 1] : "";
@@ -702,96 +722,8 @@ function renderTimetableGridDisplay() {
 
 function createHeaderCell(text) {
   let cell = document.createElement("div");
-  cell.className = "tt-header";
-  cell.style.whiteSpace = "pre-line";
-  cell.innerText = text;
+  cell.className = "tt-header"; cell.style.whiteSpace = "pre-line"; cell.innerText = text;
   return cell;
-}
-
-function openTimetableModalPopup() {
-  const modal = document.getElementById("timetable-popup-modal");
-  if (modal) {
-    modal.style.display = "flex";
-    renderModalTimetableGrid(); 
-  }
-}
-
-function closeTimetableModalPopup() {
-  const modal = document.getElementById("timetable-popup-modal");
-  if (modal) {
-    modal.style.display = "none";
-  }
-}
-
-function renderModalTimetableGrid() {
-  const classId = document.getElementById("modal-tt-class-select").value;
-  const gridContainer = document.getElementById("modal-tt-runtime-grid");
-  if (!gridContainer) return;
-
-  if (!classId) {
-    gridContainer.innerHTML = `<p style="grid-column: span 11; text-align: center; color: var(--slate-400); padding: 40px 0;">Please select a class from the dropdown above to display its timetable grid.</p>`;
-    return;
-  }
-
-  gridContainer.innerHTML = "";
-  const ttList = JSON.parse(localStorage.getItem("CLASS_TIMETABLES")) || [];
-  const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
-
-  const timeLabels = [
-    "08:45-09:45\n(Period 1)", "09:45-10:45\n(Period 2)", "10:45-11:00\n(BREAK)",
-    "11:00-12:00\n(Period 3)", "12:00-01:00\n(Period 4)", "01:00-02:00\n(LUNCH)",
-    "02:00-03:00\n(Period 5)", "03:00-03:15\n(BREAK)", "03:15-04:15\n(Period 6)", "04:15-05:16\n(Period 7)"
-  ];
-
-  gridContainer.appendChild(createHeaderCell("DAY / TIMINGS"));
-  timeLabels.forEach(lbl => gridContainer.appendChild(createHeaderCell(lbl)));
-
-  days.forEach(dayName => {
-    let dayRowCell = document.createElement("div");
-    dayRowCell.className = "tt-cell tt-day";
-    dayRowCell.innerText = dayName;
-    gridContainer.appendChild(dayRowCell);
-
-    let mappedDayData = ttList.find(row => row[0] === classId && row[1] === dayName);
-    
-    let periodTrackingCounter = 1;
-    for (let currentSlot = 1; currentSlot <= 10; currentSlot++) {
-      if (currentSlot === 3) {
-        let breakCell = document.createElement("div");
-        breakCell.className = "tt-cell tt-break";
-        breakCell.innerText = "BREAK";
-        gridContainer.appendChild(breakCell);
-        continue;
-      }
-      if (currentSlot === 6) {
-        let lunchBreak = document.createElement("div");
-        lunchBreak.className = "tt-cell tt-break";
-        lunchBreak.innerText = "LUNCH";
-        gridContainer.appendChild(lunchBreak);
-        continue;
-      }
-      if (currentSlot === 8) {
-        let breakCell = document.createElement("div");
-        breakCell.className = "tt-cell tt-break";
-        breakCell.innerText = "BREAK";
-        gridContainer.appendChild(breakCell);
-        continue;
-      }
-
-      let cellValue = mappedDayData ? mappedDayData[periodTrackingCounter + 1] : "";
-      let cellNode = document.createElement("div");
-      cellNode.className = "tt-cell";
-
-      if (cellValue && cellValue.includes("|")) {
-        let [sub, staff] = cellValue.split("|");
-        cellNode.innerHTML = `<div class="tt-subject-title">${sub}</div><div class="tt-staff-lbl">${staff}</div>`;
-      } else {
-        cellNode.innerText = "-";
-      }
-      gridContainer.appendChild(cellNode);
-      periodTrackingCounter++;
-    }
-  });
 }
 
 function renderStaffDashboardConsole() {
@@ -808,55 +740,39 @@ function renderStaffDashboardConsole() {
   const subjectList = JSON.parse(localStorage.getItem("MASTER_SUBJECTS")) || [];
   const timetableList = JSON.parse(localStorage.getItem("CLASS_TIMETABLES")) || [];
   const attendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
-  
   const activeDate = document.getElementById("att-date-picker")?.value || new Date().toISOString().split('T')[0];
 
   const profile = staffList.find(s => s[1] === staffName);
-  
   staffIdField.innerText = profile ? profile[0] : activeUserSession.uid;
   staffNameField.innerText = staffName;
   staffDeptField.innerText = profile ? profile[2] : "Faculty Department Stream";
 
   const activeAllocations = allocationsList.filter(row => row[0] === staffName);
-  
   if (activeAllocations.length === 0) {
     allocationTbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No active allocations mapped to your account.</td></tr>";
     return;
   }
 
   allocationTbody.innerHTML = "";
-  
   activeAllocations.forEach(alloc => {
     let subObj = subjectList.find(s => s[0] === alloc[2]);
     let subName = subObj ? subObj[1] : "Seminar / Lab Session";
     let targetClass = alloc[1]; 
     let targetSubjectCode = alloc[2]; 
-
     let matchingPeriods = [];
 
     timetableList.forEach(tt => {
       if (tt[0] === targetClass) {
         for (let hr = 1; hr <= 7; hr++) {
           let fieldVal = tt[hr + 1] || ""; 
-          
           if (fieldVal.includes("|")) {
             let [subToken, staffToken] = fieldVal.split("|");
             if (subToken.trim() === targetSubjectCode && staffToken.includes(staffName)) {
-              
               let checkKey = `${targetSubjectCode}_P${hr}`;
-              let attendanceRecord = attendanceLogs.find(log => 
-                log[0] === activeDate && 
-                log[1] === checkKey && 
-                log[2] === targetClass
-              );
-
-              let statusLabel = "";
-              if (attendanceRecord) {
-                statusLabel = ` <span style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px;">COMPLETED (By ${attendanceRecord[5]})</span>`;
-              } else {
-                statusLabel = ` <span style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px;">PENDING</span>`;
-              }
-
+              let attendanceRecord = attendanceLogs.find(log => log[0] === activeDate && log[1] === checkKey && log[2] === targetClass);
+              let statusLabel = attendanceRecord 
+                ? ` <span style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px;">COMPLETED</span>`
+                : ` <span style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px;">PENDING</span>`;
               matchingPeriods.push(`${tt[1]} (Hour ${hr})${statusLabel}`);
             }
           }
@@ -864,18 +780,10 @@ function renderStaffDashboardConsole() {
       }
     });
 
-    let periodsLabel = matchingPeriods.length > 0 
-      ? matchingPeriods.join("<br/>") 
-      : "<span style='color:var(--slate-400); font-style:italic;'>Not Scheduled in Timetable yet</span>";
-
-    let tr = `
-      <tr>
-        <td><strong>${targetSubjectCode}</strong></td>
-        <td>${subName}</td>
-        <td>${targetClass}</td>
-        <td><div style="line-height:1.8;">${periodsLabel}</div></td>
-      </tr>`;
-    allocationTbody.insertAdjacentHTML("beforeend", tr);
+    let periodsLabel = matchingPeriods.length > 0 ? matchingPeriods.join("<br/>") : "<em>Not Scheduled</em>";
+    allocationTbody.insertAdjacentHTML("beforeend", `
+      <tr><td><strong>${targetSubjectCode}</strong></td><td>${subName}</td><td>${targetClass}</td><td>${periodsLabel}</td></tr>
+    `);
   });
 }
 
@@ -897,16 +805,13 @@ function filterSubjectsByAssignedStaff() {
   const allocationsList = JSON.parse(localStorage.getItem("MASTER_ALLOCATIONS")) || [];
   const attendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
   const activeDate = document.getElementById("att-date-picker").value || new Date().toISOString().split('T')[0];
-
   let assignedSubjects = [];
 
   if (activeUserSession.role === "ADMIN") {
     assignedSubjects = subjectList;
   } else {
     const staffName = activeUserSession.name;
-    const codes = allocationsList
-      .filter(row => row[1] === selectedClass && row[0] === staffName)
-      .map(row => row[2]);
+    const codes = allocationsList.filter(row => row[1] === selectedClass && row[0] === staffName).map(row => row[2]);
     assignedSubjects = subjectList.filter(s => codes.includes(s[0]));
   }
 
@@ -923,37 +828,21 @@ function filterSubjectsByAssignedStaff() {
   `;
 
   assignedSubjects.forEach(sub => {
-    const isAlreadyMarkedByCoStaff = attendanceLogs.some(log => 
-      log[0] === activeDate && 
-      log[1].startsWith(sub[0]) && 
-      log[2] === selectedClass && 
-      log[5] !== activeUserSession.name
-    );
-
-    const isMarkedByMe = attendanceLogs.some(log => 
-      log[0] === activeDate && 
-      log[1].startsWith(sub[0]) && 
-      log[2] === selectedClass && 
-      log[5] === activeUserSession.name
-    );
-
+    const isAlreadyMarkedByCoStaff = attendanceLogs.some(log => log[0] === activeDate && log[1].startsWith(sub[0]) && log[2] === selectedClass && log[5] !== activeUserSession.name);
+    const isMarkedByMe = attendanceLogs.some(log => log[0] === activeDate && log[1].startsWith(sub[0]) && log[2] === selectedClass && log[5] === activeUserSession.name);
     let statusBadge = `<span class="mode-badge" style="background:#fee2e2; color:#b91c1c;">Pending</span>`;
     
-    const parsedTargetDate = new Date(activeDate);
-    const limitDate = new Date("2026-07-09");
-    if (parsedTargetDate < limitDate) {
-      statusBadge = `<span class="mode-badge" style="background:var(--slate-200); color:var(--slate-600);">No Action (Before July 09)</span>`;
+    if (new Date(activeDate) < new Date("2026-07-09")) {
+      statusBadge = `<span class="mode-badge" style="background:var(--slate-200); color:var(--slate-600);">No Action</span>`;
     } else if (isMarkedByMe) {
-      statusBadge = `<span class="mode-badge" style="background:#d1fae5; color:#065f46;">Completed (By You)</span>`;
+      statusBadge = `<span class="mode-badge" style="background:#d1fae5; color:#065f46;">Completed (You)</span>`;
     } else if (isAlreadyMarkedByCoStaff) {
-      statusBadge = `<span class="mode-badge" style="background:#e0f2fe; color:#0369a1;">Already Updated (Co-Staff)</span>`;
+      statusBadge = `<span class="mode-badge" style="background:#e0f2fe; color:#0369a1;">Updated (Co-Staff)</span>`;
     }
 
     html += `
-      <button type="button" class="action-btn" onclick="handleSubjectClickForPeriodSelection('${sub[0]}', '${selectedClass}')" style="background:var(--slate-800); text-align: left; height: auto; min-width: 250px; flex: 1; display:flex; flex-direction:column; gap:6px;">
-        <div style="font-weight:700;">${sub[0]}</div>
-        <div style="font-size:12px; font-weight:normal; opacity:0.8;">${sub[1]}</div>
-        ${statusBadge}
+      <button type="button" class="action-btn" onclick="handleSubjectClickForPeriodSelection('${sub[0]}', '${selectedClass}')" style="background:var(--slate-800); text-align: left; height: auto; min-width: 250px; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-weight:700;">${sub[0]}</div><div style="font-size:12px;">${sub[1]}</div>${statusBadge}
       </button>`;
   });
 
@@ -968,12 +857,10 @@ function handleSubjectClickForPeriodSelection(subCode, classId) {
   if (!periodWrapper) return;
   
   studentWrapper.innerHTML = ""; 
-
   const timetables = JSON.parse(localStorage.getItem("CLASS_TIMETABLES")) || [];
   const attendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
   const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-  
-  const activeDateVal = document.getElementById("att-date-picker").value || new Date().toISOString().split('T')[0];
+  const activeDateVal = document.getElementById("att-date-picker").value;
   const activeDayName = days[new Date(activeDateVal).getDay()].toUpperCase();
   const staffName = activeUserSession.name;
 
@@ -993,51 +880,21 @@ function handleSubjectClickForPeriodSelection(subCode, classId) {
   }
 
   if (availablePeriods.length === 0) {
-    periodWrapper.innerHTML = `
-      <div class="form-field-group" style="margin-top: 15px;">
-        <label style="font-weight: 700; color: var(--slate-800);">Step 2: Choose Mapped Period hour</label>
-        <p style="color: #dc2626; font-weight: 600; padding: 10px 0;">
-          No periods assigned for you on ${activeDayName} in the timetable.
-        </p>
-      </div>`;
+    periodWrapper.innerHTML = `<div class="form-field-group"><p style="color:#dc2626; font-weight:600;">No periods assigned on ${activeDayName}.</p></div>`;
     return;
   }
 
-  let html = `
-    <div class="form-field-group" style="margin-top: 15px;">
-      <label style="font-weight: 700; color: var(--slate-800);">Step 2: Choose Mapped Period hour</label>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-  `;
-
+  let html = `<div class="form-field-group" style="margin-top:15px;"><label>Step 2: Choose Mapped Period hour</label><div style="display:flex; gap:12px;">`;
   availablePeriods.forEach(p => {
     let subColumnKey = `${subCode}_P${p}`;
-    
-    let alreadyMarkedLog = attendanceLogs.find(log => 
-      log[0] === activeDateVal && 
-      log[1] === subColumnKey && 
-      log[2] === classId
-    );
+    let alreadyMarkedLog = attendanceLogs.find(log => log[0] === activeDateVal && log[1] === subColumnKey && log[2] === classId);
 
     if (alreadyMarkedLog) {
-      let markerName = alreadyMarkedLog[5];
-      let isByMe = markerName === staffName;
-      
-      html += `
-        <button type="button" class="action-btn" disabled style="background:#059669; min-width: 150px; text-align:center; opacity: 0.75; cursor: not-allowed;">
-          Period ${p} <br/>
-          <span style="font-size:10px; font-weight:600; opacity:0.9;">
-            ${isByMe ? 'COMPLETED (You)' : `COMPLETED (${markerName})`}
-          </span>
-        </button>`;
+      html += `<button type="button" class="action-btn" disabled style="background:#059669; opacity:0.75;">Period ${p} (Done)</button>`;
     } else {
-      html += `
-        <button type="button" class="action-btn" onclick="handlePeriodClickForStudentList(${p}, '${classId}')" style="background:var(--sky-600); min-width: 150px; text-align:center;">
-          Period ${p} <br/>
-          <span style="font-size:10px; font-weight:600; opacity:0.8;">PENDING</span>
-        </button>`;
+      html += `<button type="button" class="action-btn" onclick="handlePeriodClickForStudentList(${p}, '${classId}')" style="background:var(--sky-600);">Period ${p}</button>`;
     }
   });
-
   html += `</div></div>`;
   periodWrapper.innerHTML = html;
 }
@@ -1051,56 +908,36 @@ function handlePeriodClickForStudentList(periodNumber, classId) {
   const classStudents = studentsList.filter(s => s[2] === classId);
 
   if (classStudents.length === 0) {
-    studentWrapper.innerHTML = "<p style='padding: 15px;'>No student profiles registered in this section class.</p>";
+    studentWrapper.innerHTML = "<p>No student profiles registered in this section class.</p>";
     return;
   }
 
-  const activeDate = document.getElementById("att-date-picker").value || new Date().toISOString().split('T')[0];
+  const activeDate = document.getElementById("att-date-picker").value;
   const fullAttendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
 
   let html = `
     <div class="form-field-group" style="margin-top:20px;">
-      <label style="font-weight: 700; color: var(--slate-800);">Step 3: Present / Absent Checklist (Subject: ${activeSelectedSubjectRuntime} | Period: ${periodNumber})</label>
+      <label>Step 3: Checklist (Subject: ${activeSelectedSubjectRuntime} | Period: ${periodNumber})</label>
       <table class="att-list-table">
-        <thead>
-          <tr>
-            <th>Student Roll No</th>
-            <th>Full Name</th>
-            <th style="text-align:center;">Action Status</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Roll No</th><th>Full Name</th><th style="text-align:center;">Status</th></tr></thead>
         <tbody id="register-entries">
   `;
 
   classStudents.forEach(student => {
     let subColumnKey = `${activeSelectedSubjectRuntime}_P${periodNumber}`;
-    let preExisting = fullAttendanceLogs.find(log => 
-      log[0] === activeDate && 
-      log[1] === subColumnKey && 
-      log[2] === classId && 
-      log[3] === student[0]
-    );
-
+    let preExisting = fullAttendanceLogs.find(log => log[0] === activeDate && log[1] === subColumnKey && log[2] === classId && log[3] === student[0]);
     let status = preExisting ? preExisting[4] : "PRESENT";
 
     html += `
       <tr>
-        <td><strong>${student[0]}</strong></td>
-        <td>${student[1]}</td>
+        <td><strong>${student[0]}</strong></td><td>${student[1]}</td>
         <td style="text-align:center;">
-          <button type="button" class="att-status-btn ${status === "PRESENT" ? "present-state" : "absent-state"}" id="att-btn-${student[0]}" data-status="${status}">
-            ${status}
-          </button>
+          <button type="button" class="att-status-btn ${status === "PRESENT" ? "present-state" : "absent-state"}" id="att-btn-${student[0]}" data-status="${status}">${status}</button>
         </td>
       </tr>`;
   });
 
-  html += `
-        </tbody>
-      </table>
-    </div>
-  `;
-
+  html += `</tbody></table></div>`;
   studentWrapper.innerHTML = html;
 
   classStudents.forEach(student => {
@@ -1123,7 +960,7 @@ function generateAttendanceRegisterForm() {
 
 async function saveFacultyAttendanceRegister() {
   const classId = document.getElementById("att-class-select").value;
-  const activeDate = document.getElementById("att-date-picker").value || new Date().toISOString().split('T')[0];
+  const activeDate = document.getElementById("att-date-picker").value;
   
   if (!activeSelectedSubjectRuntime || !activeSelectedPeriodRuntime) {
     alert("Please select subject and click active period hour checklist first!");
@@ -1135,7 +972,6 @@ async function saveFacultyAttendanceRegister() {
 
   const buttons = entriesBody.querySelectorAll(".att-status-btn");
   let logs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
-
   setGlobalSyncState(true);
 
   const recordSubKey = `${activeSelectedSubjectRuntime}_P${activeSelectedPeriodRuntime}`;
@@ -1143,261 +979,185 @@ async function saveFacultyAttendanceRegister() {
   for (let btn of buttons) {
     let studentId = btn.id.replace("att-btn-", "");
     let capturedStatus = btn.getAttribute("data-status");
-
     let matchIdx = logs.findIndex(log => log[0] === activeDate && log[1] === recordSubKey && log[2] === classId && log[3] === studentId);
     let payload = [activeDate, recordSubKey, classId, studentId, capturedStatus, activeUserSession.name];
-    let recordId = matchIdx > -1 ? logs[matchIdx][logs[matchIdx].length - 1] : "REC-ATT-" + Date.now() + "-" + Math.floor(Math.random()*1000);
-    payload.push(recordId);
-
-    if (matchIdx > -1) logs[matchIdx] = payload;
-    else logs.push(payload);
-
-    await syncWithGoogleSheet("Daily_Class_Attendance", payload, SYSTEM_SCHEMA["DAILY_ATTENDANCE"], "CREATE");
+    let recordId = matchIdx > -1 ? logs[matchIdx][logs[matchIdx].length - 1] : "ATT-" + Date.now() + "-" + Math.floor(Math.random()*100);
+    
+    if (matchIdx > -1) {
+      payload.push(recordId); logs[matchIdx] = payload;
+      await syncWithGoogleSheet("Daily_Class_Attendance", payload, SYSTEM_SCHEMA.DAILY_ATTENDANCE, "UPDATE", recordId);
+    } else {
+      payload.push(recordId); logs.push(payload);
+      await syncWithGoogleSheet("Daily_Class_Attendance", payload, SYSTEM_SCHEMA.DAILY_ATTENDANCE, "CREATE");
+    }
   }
 
   localStorage.setItem("DAILY_ATTENDANCE", JSON.stringify(logs));
   setGlobalSyncState(false);
-  alert("Success: Verification sheet successfully updated and synchronized!");
-  
-  renderStaffDashboardConsole();
+  alert("Attendance successfully stored and synchronized!");
   filterSubjectsByAssignedStaff();
 }
 
-function renderStudentSelfProfileViewer() {
-  const loggedStudentID = activeUserSession.uid;
-  const studentsList = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
-  const classesList = JSON.parse(localStorage.getItem("MASTER_CLASSES")) || [];
-  const coursesList = JSON.parse(localStorage.getItem("MASTER_COURSES")) || [];
-  const attendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
-
-  let profile = studentsList.find(s => s[0] == loggedStudentID);
-  if (!profile) return;
-
-  let classRecord = classesList.find(c => c[0] == profile[2]);
-  let courseRecord = coursesList.find(co => co[0] == profile[3]);
-
-  document.getElementById("p-student-id").innerText = profile[0];
-  document.getElementById("p-student-name").innerText = profile[1];
-  document.getElementById("p-class-name").innerText = classRecord ? classRecord[1] : profile[2];
-  document.getElementById("p-course-name").innerText = courseRecord ? courseRecord[1] : profile[3];
-  document.getElementById("p-status").innerText = profile[4] || "Active";
-  document.getElementById("p-dob").innerText = profile[5];
-  document.getElementById("p-age").innerText = profile[6];
-  document.getElementById("p-primary").innerText = profile[7];
-  document.getElementById("p-secondary").innerText = profile[8] || "-";
-  document.getElementById("p-marks").innerText = `10th: ${profile[9]}% | 12th: ${profile[10]}%`;
-  
-  let accomText = profile[11];
-  if(accomText === "Hostel") accomText += ` (${profile[12]} - Room ${profile[13]})`;
-  document.getElementById("p-accommodation").innerText = accomText;
-  document.getElementById("p-address").innerText = profile[14];
-
-  const photoFrame = document.getElementById("p-student-photo-frame");
-  if (photoFrame && profile[15]) {
-    photoFrame.innerHTML = `<img src="${profile[15]}" alt="Profile Photo" style="width:100%; height:100%; object-fit:cover;">`;
-  } else if (photoFrame) {
-    photoFrame.innerHTML = `<i class="fas fa-user-graduate"></i>`;
-  }
-
-  const studentAttLogs = attendanceLogs.filter(log => log[3] == loggedStudentID);
-  const totalSlots = studentAttLogs.length;
-  const presentSlots = studentAttLogs.filter(log => log[4] === "PRESENT").length;
-  const percentageValue = totalSlots > 0 ? ((presentSlots / totalSlots) * 100).toFixed(1) : "100.0";
-
-  document.getElementById("p-total-days").innerText = totalSlots;
-  document.getElementById("p-present-days").innerText = presentSlots;
-  document.getElementById("p-absent-days").innerText = totalSlots - presentSlots;
-  document.getElementById("p-percentage").innerText = percentageValue + "%";
-
-  const attHistoryBody = document.getElementById("student-att-history-tbody");
-  if (attHistoryBody) {
-    attHistoryBody.innerHTML = "";
-    if (studentAttLogs.length === 0) {
-      attHistoryBody.innerHTML = "<tr><td colspan='4' style='text-align: center; color: var(--slate-400);'>No logs.</td></tr>";
-      return;
-    }
-    studentAttLogs.sort((a,b) => new Date(b[0]) - new Date(a[0]));
-    studentAttLogs.forEach(log => {
-      attHistoryBody.insertAdjacentHTML('beforeend', `<tr><td><strong>${log[0]}</strong></td><td>${log[1]}</td><td><span style="font-weight:700; color:${log[4]==='PRESENT'?'#166534':'#991b1b'}">${log[4]}</span></td><td>${log[5]}</td></tr>`);
-    });
-  }
-}
-
-function handleAttendanceCategoryToggle() {}
+/* ==========================================================================
+   MARKS AND STUDENT SELF PROFILE REGISTRY FUNCTIONS
+   ========================================================================== */
 
 function filterSubjectsForMarksEntry() {
   const classId = document.getElementById("marks-class-select").value;
   const subjectSelect = document.getElementById("marks-subject-select");
-  if (!subjectSelect) return;
+  if(!subjectSelect) return;
   subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
 
-  if (!classId) return;
-
+  if(!classId) return;
   const subjectList = JSON.parse(localStorage.getItem("MASTER_SUBJECTS")) || [];
   const allocationsList = JSON.parse(localStorage.getItem("MASTER_ALLOCATIONS")) || [];
-  
+
   let assignedSubjects = [];
   if (activeUserSession.role === "ADMIN") {
     assignedSubjects = subjectList;
   } else {
     const staffName = activeUserSession.name;
-    const codes = allocationsList
-      .filter(row => row[1] === classId && row[0] === staffName)
-      .map(row => row[2]);
+    const codes = allocationsList.filter(row => row[1] === classId && row[0] === staffName).map(row => row[2]);
     assignedSubjects = subjectList.filter(s => codes.includes(s[0]));
   }
 
   assignedSubjects.forEach(sub => {
     let opt = document.createElement("option");
-    opt.value = sub[0];
-    opt.text = `${sub[0]} - ${sub[1]}`;
+    opt.value = sub[0]; opt.text = `${sub[0]} - ${sub[1]}`;
     subjectSelect.appendChild(opt);
   });
 }
 
 function loadMarksEntrySheet() {
   const classId = document.getElementById("marks-class-select").value;
-  const subjectCode = document.getElementById("marks-subject-select").value;
+  const subCode = document.getElementById("marks-subject-select").value;
   const container = document.getElementById("marks-entry-container");
+  if(!container) return;
 
-  if (!classId || !subjectCode) {
-    alert("Please select both Class and Subject!");
+  if(!classId || !subCode) {
+    container.innerHTML = "<p style='padding:15px;'>Select parameters to load.</p>";
     return;
   }
 
   const studentsList = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
-  const marksLogs = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
+  const marksList = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
   const classStudents = studentsList.filter(s => s[2] === classId);
 
-  if (classStudents.length === 0) {
-    container.innerHTML = "<p style='padding: 15px;'>No student profiles registered in this class sector.</p>";
+  if(classStudents.length === 0) {
+    container.innerHTML = "<p style='padding:15px;'>No student profiles mapped.</p>";
     return;
   }
 
   let html = `
-    <table class="att-list-table">
-      <thead>
-        <tr>
-          <th>Roll No</th>
-          <th>Student Name</th>
-          <th>CIA 1 (50)</th>
-          <th>CIA 2 (50)</th>
-          <th>CIA 3 (50)</th>
-          <th>Assignment (5)</th>
-          <th>Attendance (5)</th>
-          <th>Semester (100)</th>
-          <th>Grand Total (100)</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
+    <table>
+      <thead><tr><th>Roll No</th><th>Name</th><th>CIA 1 (20)</th><th>CIA 2 (20)</th><th>CIA 3 (20)</th><th>Assgn (10)</th><th>Att (30)</th><th>Total (100)</th></tr></thead>
+      <tbody>`;
 
-  classStudents.forEach(student => {
-    let existingRecord = marksLogs.find(m => m[0] === student[0] && m[1] === subjectCode);
-    
-    let cia1 = existingRecord ? existingRecord[2] : "0";
-    let cia2 = existingRecord ? existingRecord[3] : "0";
-    let cia3 = existingRecord ? existingRecord[4] : "0";
-    let assign = existingRecord ? existingRecord[5] : "0";
-    let att = existingRecord ? existingRecord[6] : "0";
-    let sem = existingRecord ? existingRecord[7] : "0";
-    let total = existingRecord ? existingRecord[8] : "0.0";
-
+  classStudents.forEach(st => {
+    let record = marksList.find(m => m[0] === st[0] && m[1] === subCode) || ["", "", "0", "0", "0", "0", "0", "0", "0"];
     html += `
-      <tr data-student-id="${student[0]}">
-        <td><strong>${student[0]}</strong></td>
-        <td>${student[1]}</td>
-        <td><input type="number" class="marks-input style-box" style="width:65px; padding:6px;" min="0" max="50" value="${cia1}" oninput="calculateRowMarkRuntime(this)"></td>
-        <td><input type="number" class="marks-input style-box" style="width:65px; padding:6px;" min="0" max="50" value="${cia2}" oninput="calculateRowMarkRuntime(this)"></td>
-        <td><input type="number" class="marks-input style-box" style="width:65px; padding:6px;" min="0" max="50" value="${cia3}" oninput="calculateRowMarkRuntime(this)"></td>
-        <td><input type="number" class="marks-input style-box" style="width:65px; padding:6px;" min="0" max="5" value="${assign}" oninput="calculateRowMarkRuntime(this)"></td>
-        <td><input type="number" class="marks-input style-box" style="width:65px; padding:6px;" min="0" max="5" value="${att}" oninput="calculateRowMarkRuntime(this)"></td>
-        <td><input type="number" class="marks-input style-box" style="width:65px; padding:6px;" min="0" max="100" value="${sem}" oninput="calculateRowMarkRuntime(this)"></td>
-        <td style="font-weight:700; color:var(--sky-600);" class="row-grand-total">${total}</td>
-      </tr>
-    `;
+      <tr class="marks-row-node" data-student-id="${st[0]}">
+        <td><strong>${st[0]}</strong></td><td>${st[1]}</td>
+        <td><input type="number" class="marks-input cia1" value="${record[2]}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input cia2" value="${record[3]}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input cia3" value="${record[4]}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input assgn" value="${record[5]}" min="0" max="10" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input atten" value="${record[6]}" min="0" max="30" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input total-score" value="${record[8]}" readonly style="background:#e2e8f0; font-weight:700;"></td>
+      </tr>`;
   });
 
   html += `</tbody></table>`;
   container.innerHTML = html;
 }
 
-function calculateRowMarkRuntime(inputNode) {
-  const row = inputNode.closest("tr");
-  const inputs = row.querySelectorAll(".marks-input");
-  
-  let cia1 = parseFloat(inputs[0].value) || 0;
-  let cia2 = parseFloat(inputs[1].value) || 0;
-  let cia3 = parseFloat(inputs[2].value) || 0;
-  let assignment = parseFloat(inputs[3].value) || 0;
-  let attendance = parseFloat(inputs[4].value) || 0;
-  let semester = parseFloat(inputs[5].value) || 0;
-
-  let ciaArr = [cia1, cia2, cia3].sort((a, b) => b - a);
-  let bestOfTwoTotal = ciaArr[0] + ciaArr[1]; 
-  
-  let scaledCia = (bestOfTwoTotal / 100) * 40;
-  let scaledSemester = (semester / 100) * 50;
-  let grandTotal = scaledCia + assignment + attendance + scaledSemester;
-
-  row.querySelector(".row-grand-total").innerText = grandTotal.toFixed(1);
+function calculateRowTotalMarks(inputNode) {
+  const row = inputNode.closest(".marks-row-node");
+  const c1 = parseFloat(row.querySelector(".cia1").value) || 0;
+  const c2 = parseFloat(row.querySelector(".cia2").value) || 0;
+  const c3 = parseFloat(row.querySelector(".cia3").value) || 0;
+  const as = parseFloat(row.querySelector(".assgn").value) || 0;
+  const at = parseFloat(row.querySelector(".atten").value) || 0;
+  row.querySelector(".total-score").value = c1 + c2 + c3 + as + at;
 }
 
 async function saveStudentsMarksRegister() {
-  const subjectCode = document.getElementById("marks-subject-select").value;
-  const container = document.getElementById("marks-entry-container");
-  const rows = container.querySelectorAll("tbody tr");
-
-  if (!subjectCode || rows.length === 0) {
-    alert("No active marks sheet generated or populated to save!");
-    return;
+  const subCode = document.getElementById("marks-subject-select").value;
+  const rows = document.querySelectorAll(".marks-row-node");
+  if(!subCode || rows.length === 0) {
+    alert("No records loaded to process!"); return;
   }
 
-  let marksLogs = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
+  let marksList = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
   setGlobalSyncState(true);
 
-  for (let row of rows) {
-    let studentId = row.getAttribute("data-student-id");
-    const inputs = row.querySelectorAll(".marks-input");
-    
-    let cia1 = inputs[0].value || "0";
-    let cia2 = inputs[1].value || "0";
-    let cia3 = inputs[2].value || "0";
-    let assign = inputs[3].value || "0";
-    let att = inputs[4].value || "0";
-    let sem = inputs[5].value || "0";
-    let total = row.querySelector(".row-grand-total").innerText;
+  for(let row of rows) {
+    let sId = row.getAttribute("data-student-id");
+    let c1 = row.querySelector(".cia1").value;
+    let c2 = row.querySelector(".cia2").value;
+    let c3 = row.querySelector(".cia3").value;
+    let as = row.querySelector(".assgn").value;
+    let at = row.querySelector(".atten").value;
+    let tot = row.querySelector(".total-score").value;
 
-    let matchIdx = marksLogs.findIndex(m => m[0] === studentId && m[1] === subjectCode);
-    let payload = [studentId, subjectCode, cia1, cia2, cia3, assign, att, sem, total];
-    
-    let recordId = matchIdx > -1 ? marksLogs[matchIdx][marksLogs[matchIdx].length - 1] : "REC-MRK-" + Date.now() + "-" + Math.floor(Math.random()*1000);
+    let matchIdx = marksList.findIndex(m => m[0] === sId && m[1] === subCode);
+    let payload = [sId, subCode, c1, c2, c3, as, at, "Current", tot];
+    let recordId = matchIdx > -1 ? marksList[matchIdx][marksList[matchIdx].length - 1] : "MRK-" + Date.now() + "-" + Math.floor(Math.random()*100);
     payload.push(recordId);
 
-    if (matchIdx > -1) {
-      marksLogs[matchIdx] = payload;
-      await syncWithGoogleSheet("Student_Marks", payload, SYSTEM_SCHEMA["STUDENT_MARKS"], "UPDATE", recordId);
+    if(matchIdx > -1) {
+      marksList[matchIdx] = payload;
+      await syncWithGoogleSheet("Student_Marks", payload, SYSTEM_SCHEMA.STUDENT_MARKS, "UPDATE", recordId);
     } else {
-      marksLogs.push(payload);
-      await syncWithGoogleSheet("Student_Marks", payload, SYSTEM_SCHEMA["STUDENT_MARKS"], "CREATE");
+      marksList.push(payload);
+      await syncWithGoogleSheet("Student_Marks", payload, SYSTEM_SCHEMA.STUDENT_MARKS, "CREATE");
     }
   }
 
-  localStorage.setItem("STUDENT_MARKS", JSON.stringify(marksLogs));
+  localStorage.setItem("STUDENT_MARKS", JSON.stringify(marksList));
   setGlobalSyncState(false);
-  alert("Success: Student marks successfully computed and synchronized!");
+  alert("Marks performance register synchronized successfully!");
 }
 
-function handleUniversalDelete(tblKey, rowIdx) {
-  if (!confirm("Are you sure you want to permanently delete this record?")) return;
-  let valuesMatrix = JSON.parse(localStorage.getItem(tblKey)) || [];
-  let targetRowData = valuesMatrix[rowIdx];
-  let recordId = targetRowData[targetRowData.length - 1];
+function renderStudentSelfProfileViewer() {
+  const studentUid = activeUserSession.uid;
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const attendance = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
+  const currentStudent = students.find(s => s[0] == studentUid);
 
-  let targetTab = sheetTabForKey(tblKey, targetRowData);
-  if (targetTab) syncWithGoogleSheet(targetTab, [], [], "DELETE", recordId);
+  if(!currentStudent) return;
 
-  valuesMatrix.splice(rowIdx, 1);
-  localStorage.setItem(tblKey, JSON.stringify(valuesMatrix));
-  renderAllTables();
+  document.getElementById("p-student-name").innerText = currentStudent[1];
+  document.getElementById("p-student-id").innerText = currentStudent[0];
+  document.getElementById("p-class-name").innerText = currentStudent[2];
+  document.getElementById("p-course-name").innerText = currentStudent[3];
+  document.getElementById("p-status").innerText = currentStudent[4];
+  document.getElementById("p-dob").innerText = currentStudent[5];
+  document.getElementById("p-age").innerText = currentStudent[6];
+  document.getElementById("p-primary").innerText = currentStudent[7];
+  document.getElementById("p-secondary").innerText = currentStudent[8] || "-";
+  document.getElementById("p-marks").innerText = `10th: ${currentStudent[9]}% | 12th: ${currentStudent[10]}%`;
+  document.getElementById("p-accommodation").innerText = currentStudent[11] === "Hostel" ? `Hostel: ${currentStudent[12]} (Room ${currentStudent[13]})` : "Dayscholar Division";
+  document.getElementById("p-address").innerText = currentStudent[14];
+
+  const frame = document.getElementById("p-student-photo-frame");
+  if(currentStudent[15]) {
+    frame.innerHTML = `<img src="${currentStudent[15]}" style="width:100%; height:100%; object-fit:cover;">`;
+  }
+
+  const studentLogs = attendance.filter(log => log[3] == studentUid);
+  const presentCount = studentLogs.filter(log => log[4] === "PRESENT").length;
+  const absentCount = studentLogs.length - presentCount;
+  const ratio = studentLogs.length > 0 ? Math.round((presentCount / studentLogs.length) * 100) : 100;
+
+  document.getElementById("p-total-days").innerText = studentLogs.length;
+  document.getElementById("p-present-days").innerText = presentCount;
+  document.getElementById("p-absent-days").innerText = absentCount;
+  document.getElementById("p-percentage").innerText = `${ratio}%`;
+
+  const tbody = document.getElementById("student-att-history-tbody");
+  tbody.innerHTML = "";
+  studentLogs.forEach(log => {
+    tbody.insertAdjacentHTML('beforeend', `<tr><td>${log[0]}</td><td>${log[1]}</td><td><strong>${log[4]}</strong></td><td>${log[5]}</td></tr>`);
+  });
 }
