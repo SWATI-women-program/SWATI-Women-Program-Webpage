@@ -770,9 +770,12 @@ function renderStaffDashboardConsole() {
             if (subToken.trim() === targetSubjectCode && staffToken.includes(staffName)) {
               let checkKey = `${targetSubjectCode}_P${hr}`;
               let attendanceRecord = attendanceLogs.find(log => log[0] === activeDate && log[1] === checkKey && log[2] === targetClass);
+              
+              // இங்க தான் Badge-ல் Click Event மற்றும் Pointer Cursor சேர்க்கப்பட்டுள்ளது
               let statusLabel = attendanceRecord 
-                ? ` <span style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px;">COMPLETED</span>`
-                : ` <span style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px;">PENDING</span>`;
+                ? ` <span onclick="redirectToAttendanceDirectly('${targetClass}', '${targetSubjectCode}', ${hr})" style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">COMPLETED</span>`
+                : ` <span onclick="redirectToAttendanceDirectly('${targetClass}', '${targetSubjectCode}', ${hr})" style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">PENDING</span>`;
+              
               matchingPeriods.push(`${tt[1]} (Hour ${hr})${statusLabel}`);
             }
           }
@@ -785,6 +788,23 @@ function renderStaffDashboardConsole() {
       <tr><td><strong>${targetSubjectCode}</strong></td><td>${subName}</td><td>${targetClass}</td><td>${periodsLabel}</td></tr>
     `);
   });
+}
+
+// புதிதாக சேர்க்கப்பட்டுள்ள Redirect & Automate செய்யும் ஃபங்க்ஷன்
+function redirectToAttendanceDirectly(classId, subjectCode, hourNumber) {
+  // 1. Attendance Entry டேப்-க்கு மாற்றவும்
+  triggerNavigationTabChange("staff-attendance-section");
+
+  // 2. Class Selector டிராப்டவுனை செலக்ட் செய்யவும்
+  const classSelect = document.getElementById("att-class-select");
+  if (classSelect) {
+    classSelect.value = classId;
+    
+    // 3. சப்ஜெக்ட் லிஸ்ட் மற்றும் பீரியடை ஆட்டோமேட்டிக்காக லோடு செய்யவும்
+    filterSubjectsByAssignedStaff();
+    handleSubjectClickForPeriodSelection(subjectCode, classId);
+    handlePeriodClickForStudentList(hourNumber, classId);
+  }
 }
 
 let activeSelectedSubjectRuntime = "";
