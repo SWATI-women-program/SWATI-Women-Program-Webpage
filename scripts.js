@@ -1077,8 +1077,8 @@ function loadMarksEntrySheet() {
           <th>CIA 1 (20)</th>
           <th>CIA 2 (20)</th>
           <th>CIA 3 (20)</th>
-          <th>Assgn (5)</th>
-          <th>Att (5)</th>
+          <th>Assignment (5)</th>
+          <th>Attendance (5)</th>
           <th>Semester (100)</th>
           <th>Total (100)</th>
         </tr>
