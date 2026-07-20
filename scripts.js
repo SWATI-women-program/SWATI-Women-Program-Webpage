@@ -612,7 +612,7 @@ function getSearchFilterText(tbodyId) {
   return el ? el.value.trim().toLowerCase() : "";
 }
 
-function triggerSearchFilter() {
+function triggerSearchFilter(tbodyId) {
   renderAllTables();
 }
 
@@ -1223,7 +1223,7 @@ function renderStudentSelfProfileViewer() {
   const frame = document.getElementById("p-student-photo-frame");
   if(currentStudent[15]) {
     const fixedImage = fixBase64Image(currentStudent[15]);
-    frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class class=\'fas fa-user-graduate\'></i>';">`;
+    frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class=\'fas fa-user-graduate\'></i>';">`;
   } else {
     frame.innerHTML = `<i class="fas fa-user-graduate"></i>`;
   }
@@ -1374,7 +1374,7 @@ function renderStudentSelfProfileViewer() {
       htmlBuffer += `
         <div class="profile-card" style="grid-template-columns: repeat(2, 1fr); background: var(--slate-50); border: 1px dashed var(--slate-300); margin-top:20px;">
           <div class="info-tile" style="border-left: 4px solid var(--primary-accent);"><span>Total Cumulative Subjects</span><p>${subjectCountOverall}</p></div>
-          <div class="info-tile" style="border-left: 4px solid var(--sky-500);"><span>Overall GPA Performance / Percentage</span><p>${absolutePerformanceAverage}%</p></div>
+          <div class="info-tile" style="border-left: 4px solid #38bdf8;"><span>Overall GPA Performance / Percentage</span><p>${absolutePerformanceAverage}%</p></div>
         </div>`;
         
       markSectionWrapper.innerHTML = htmlBuffer;
