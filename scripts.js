@@ -142,6 +142,10 @@ function setupGlobalEvents() {
         if(configureBlock) configureBlock.style.display = "none";
         if(matrixBlock) matrixBlock.style.display = "none";
       }
+
+      if(targetSectionId === "event-attendance-section") {
+        initEventAttendanceTab();
+      }
     });
   });
 
@@ -802,7 +806,7 @@ function renderStaffDashboardConsole() {
                 ? ` <span onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})" style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">COMPLETED</span>`
                 : ` <span onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})" style="font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px; cursor:pointer;">PENDING</span>`;
               
-              matchingPeriods.push(`<div style="cursor:pointer; padding:2px 0;" onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})">${tt[1]} (Hour ${hr})${statusLabel}</div>`);
+              matchingPeriods.push(`<div style="cursor:pointer; padding:2px 0;" onclick="redirectToAttendanceDirectly(\`${targetClass}\`, \`${targetSubjectCode}\`, ${hr})${statusLabel}">${tt[1]} (Hour ${hr})</div>`);
             }
           }
         }
@@ -1040,7 +1044,7 @@ async function saveFacultyAttendanceRegister() {
 
 /* ==========================================================================
    MARKS AND STUDENT SELF PROFILE REGISTRY FUNCTIONS
-   ========================================================================== */
+   ========================================================================= */
 
 function filterSubjectsForMarksEntry() {
   const classId = document.getElementById("marks-class-select").value;
@@ -1378,29 +1382,6 @@ function renderStudentSelfProfileViewer() {
   }
 }
 
-window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
-window.renderStaffDashboardConsole = renderStaffDashboardConsole;
-window.filterSubjectsForMarksEntry = filterSubjectsForMarksEntry;
-window.loadMarksEntrySheet = loadMarksEntrySheet;
-window.calculateRowTotalMarks = calculateRowTotalMarks;
-window.saveStudentsMarksRegister = saveStudentsMarksRegister;
-window.generateAttendanceRegisterForm = generateAttendanceRegisterForm;
-window.saveFacultyAttendanceRegister = saveFacultyAttendanceRegister;
-window.handleSystemLogin = handleSystemLogin;
-window.handleLogout = handleLogout;
-window.triggerSearchFilter = triggerSearchFilter;
-window.handleFormSubmission = handleFormSubmission;
-window.handlePhotoUpload = handlePhotoUpload;
-window.calculateStudentAgeRuntime = calculateStudentAgeRuntime;
-window.toggleHostelFieldsVisibility = toggleHostelFieldsVisibility;
-window.toggleTimetablePlannerMode = toggleTimetablePlannerMode;
-window.saveTimetableRecord = saveTimetableRecord;
-window.openTimetableModalPopup = openTimetableModalPopup;
-window.closeTimetableModalPopup = closeTimetableModalPopup;
-window.renderModalTimetableGrid = renderModalTimetableGrid;
-window.syncAllFromGoogleSheets = syncAllFromGoogleSheets;
-
-// பிரிண்ட் செய்வதற்கான புதிய பங்க்ஷன் - கோப்பின் இறுதியில் சேர்க்கவும்
 function printStudentProfileCard() {
   const studentUid = activeUserSession.uid;
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
@@ -1425,10 +1406,8 @@ function printStudentProfileCard() {
   const address = currentStudent[14];
   const photoSrc = currentStudent[15] ? fixBase64Image(currentStudent[15]) : '';
 
-  // புதிய விண்டோ ஓபன் செய்தல்
   const printWindow = window.open('', '_blank', 'width=900,height=1200');
   
-  // A4 அளவில் லோகோ மற்றும் விபரங்களுடன் கூடிய HTML ஸ்ட்ரக்சர்
   printWindow.document.write(`
     <html>
     <head>
@@ -1437,120 +1416,64 @@ function printStudentProfileCard() {
         @page { size: A4; margin: 20mm; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; margin: 0; padding: 0; background: #fff; line-height: 1.5; }
         .print-container { width: 100%; max-width: 800px; margin: 0 auto; }
-        
-        /* 4 Logos Header */
         .logo-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #cbd5e1; padding-bottom: 20px; margin-bottom: 30px; }
         .logo-header img { height: 55px; object-fit: contain; }
-        
         .title-banner { text-align: center; margin-bottom: 30px; }
         .title-banner h2 { margin: 0; font-size: 22px; color: #0f172a; letter-spacing: 1px; }
         .title-banner p { margin: 5px 0 0 0; font-size: 14px; color: #64748b; font-weight: 500; }
-        
-        /* Profile Section */
         .profile-grid { display: grid; grid-template-columns: 1fr 180px; gap: 30px; margin-bottom: 30px; }
-        
-        /* Details Table */
         .details-table { width: 100%; border-collapse: collapse; }
         .details-table td { padding: 10px 12px; vertical-align: top; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .details-table td.label { font-weight: 600; color: #475569; width: 40%; }
         .details-table td.value { color: #0f172a; }
-        
-        /* Photo Box */
         .photo-wrapper { text-align: right; }
         .photo-box { width: 150px; height: 170px; border: 1px solid #cbd5e1; border-radius: 8px; display: inline-block; overflow: hidden; background: #f8fafc; }
         .photo-box img { width: 100%; height: 100%; object-fit: cover; }
         .photo-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 12px; text-align: center; padding: 10px; }
-        
-        /* Footer */
         .print-footer { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; }
       </style>
     </head>
     <body>
       <div class="print-container">
-        <!-- Top 4 Logos -->
         <div class="logo-header">
           <img src="SASTRA_Logo.jpg" alt="SASTRA">
           <img src="Greaves_Logo.jpg" alt="Greaves">
           <img src="Swati_Logo.jpg" alt="Swati">
           <img src="Pygmalion_Foundation_logo.jpg" alt="Pygmalion">
         </div>
-        
         <div class="title-banner">
           <h2>SWATI WOMEN'S PROGRAM</h2>
           <p>Official Student Profile Record</p>
         </div>
-        
         <div class="profile-grid">
-          <!-- Left: Details Table -->
           <div>
             <table class="details-table">
-              <tr>
-                <td class="label">Student Name</td>
-                <td class="value">: <strong>${studentName}</strong></td>
-              </tr>
-              <tr>
-                <td class="label">Roll Number / ID</td>
-                <td class="value">: ${rollNo}</td>
-              </tr>
-              <tr>
-                <td class="label">Enrolled Class</td>
-                <td class="value">: ${className}</td>
-              </tr>
-              <tr>
-                <td class="label">Course Track</td>
-                <td class="value">: ${courseName}</td>
-              </tr>
-              <tr>
-                <td class="label">Date of Birth (Age)</td>
-                <td class="value">: ${dob} (${age} Years)</td>
-              </tr>
-              <tr>
-                <td class="label">Primary Contact</td>
-                <td class="value">: ${primaryContact}</td>
-              </tr>
-              <tr>
-                <td class="label">Secondary Contact</td>
-                <td class="value">: ${secondaryContact}</td>
-              </tr>
-              <tr>
-                <td class="label">Scholastic Marks</td>
-                <td class="value">: ${scholasticMarks}</td>
-              </tr>
-              <tr>
-                <td class="label">Accommodation</td>
-                <td class="value">: ${accommodation}</td>
-              </tr>
-              <tr>
-                <td class="label">Permanent Address</td>
-                <td class="value">: ${address}</td>
-              </tr>
-              <tr>
-                <td class="label">Profile Status</td>
-                <td class="value">: ${status}</td>
-              </tr>
+              <tr><td class="label">Student Name</td><td class="value">: <strong>${studentName}</strong></td></tr>
+              <tr><td class="label">Roll Number / ID</td><td class="value">: ${rollNo}</td></tr>
+              <tr><td class="label">Enrolled Class</td><td class="value">: ${className}</td></tr>
+              <tr><td class="label">Course Track</td><td class="value">: ${courseName}</td></tr>
+              <tr><td class="label">Date of Birth (Age)</td><td class="value">: ${dob} (${age} Years)</td></tr>
+              <tr><td class="label">Primary Contact</td><td class="value">: ${primaryContact}</td></tr>
+              <tr><td class="label">Secondary Contact</td><td class="value">: ${secondaryContact}</td></tr>
+              <tr><td class="label">Scholastic Marks</td><td class="value">: ${scholasticMarks}</td></tr>
+              <tr><td class="label">Accommodation</td><td class="value">: ${accommodation}</td></tr>
+              <tr><td class="label">Permanent Address</td><td class="value">: ${address}</td></tr>
+              <tr><td class="label">Profile Status</td><td class="value">: ${status}</td></tr>
             </table>
           </div>
-          
-          <!-- Right: Photo -->
           <div class="photo-wrapper">
             <div class="photo-box">
               ${photoSrc ? `<img src="${photoSrc}">` : `<div class="photo-placeholder">No Photo Available</div>`}
             </div>
           </div>
         </div>
-        
-        <!-- Verification Signatures Footer -->
         <div class="print-footer">
           <div style="text-align: right; font-weight: 500; margin-top: 40px; border-top: 1px dashed #94a3b8; padding-top: 5px; width: 150px;">Authorized Signature</div>
         </div>
       </div>
-      
       <script>
         window.onload = function() {
-          setTimeout(function() {
-            window.print();
-            window.close();
-          }, 500);
+          setTimeout(function() { window.print(); window.close(); }, 500);
         };
       <\/script>
     </body>
@@ -1559,32 +1482,29 @@ function printStudentProfileCard() {
   printWindow.document.close();
 }
 
-// பழைய விண்டோஸ் எக்ஸ்போர்ட் உடன் இணைக்கவும்
-window.printStudentProfileCard = printStudentProfileCard;
-
-// 1. அட்டெண்டன்ஸ் செக்ஷன் ஓபன் ஆகும்போது பேட்ச் லிஸ்ட்டை லோடு செய்யும் ஃபங்க்ஷன்
 function initEventAttendanceTab() {
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
   const batchSelect = document.getElementById("event-batch-select");
   
-  // இன்றைய தேதியைத் தானாக செட் செய்ய
-  document.getElementById("event-date").value = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById("event-date");
+  if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
   
-  // தனித்துவமான (Unique) பேட்ச்களை மட்டும் பிரித்தெடுக்க
   const batches = [...new Set(students.map(s => s[2]))].filter(Boolean); 
   
-  batchSelect.innerHTML = '<option value="">-- Select a Batch --</option>';
-  batches.forEach(batch => {
-    const opt = document.createElement("option");
-    opt.value = batch;
-    opt.textContent = batch;
-    batchSelect.appendChild(opt);
-  });
+  if(batchSelect) {
+    batchSelect.innerHTML = '<option value="">-- Select a Batch --</option>';
+    batches.forEach(batch => {
+      const opt = document.createElement("option");
+      opt.value = batch;
+      opt.textContent = batch;
+      batchSelect.appendChild(opt);
+    });
+  }
   
-  document.getElementById("attendance-list-card").style.display = "none";
+  const listCard = document.getElementById("attendance-list-card");
+  if(listCard) listCard.style.display = "none";
 }
 
-// 2. செலக்ட் செய்த பேட்ச் மாணவர்களை டேபிளில் காட்டும் ஃபங்க்ஷன்
 function loadStudentsForAttendance() {
   const selectedBatch = document.getElementById("event-batch-select").value;
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
@@ -1595,9 +1515,7 @@ function loadStudentsForAttendance() {
     return;
   }
   
-  // குறிப்பிட்ட பேட்ச் மாணவர்களை மட்டும் ஃபில்டர் செய்தல்
   const filteredStudents = students.filter(s => s[2] === selectedBatch);
-  
   tbody.innerHTML = "";
   
   if (filteredStudents.length === 0) {
@@ -1628,7 +1546,6 @@ function loadStudentsForAttendance() {
   document.getElementById("attendance-list-card").style.display = "block";
 }
 
-// 3. அட்டெண்டன்ஸ் டேட்டாவைச் சேமிக்கும் ஃபங்க்ஷன் (Google Sheets-க்கு அனுப்பத் தயார் செய்தல்)
 function submitEventAttendance() {
   const date = document.getElementById("event-date").value;
   const desc = document.getElementById("event-desc").value;
@@ -1641,7 +1558,6 @@ function submitEventAttendance() {
   
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
   const filteredStudents = students.filter(s => s[2] === batch);
-  
   const attendanceData = [];
   
   filteredStudents.forEach(student => {
@@ -1651,36 +1567,40 @@ function submitEventAttendance() {
     let status = "Present";
     
     for (const opt of radioOpts) {
-      if (opt.checked) {
-        status = opt.value;
-        break;
-      }
+      if (opt.checked) { status = opt.value; break; }
     }
     
     attendanceData.push({
-      date: date,
-      description: desc,
-      batch: batch,
-      rollNo: rollNo,
-      name: name,
-      status: status
+      date: date, description: desc, batch: batch, rollNo: rollNo, name: name, status: status
     });
   });
   
   console.log("Attendance Data to Save:", attendanceData);
   alert("Attendance marked successfully local-wise! (Ready to push to Google Sheet)");
-  
-  // குறிப்பு: உங்களுடைய கூகுள் ஷீட்ஸ் பைப்லைனுடன் இதை இணைக்க google.script.run வழியாக இந்த டேட்டாவை அனுப்பிக் கொள்ளலாம்.
 }
 
-// டேப் மாறும் போது பேட்ச் விவரங்களை லோடு செய்ய
-// உங்களுடைய switchAdminTab ஃபங்க்ஷனில் இதைக் கால் செய்யவும்:
-// if(tabId === 'event-attendance-section') initEventAttendanceTab();
-window.switchAdminTabWrapper = function(tabId) {
-  if(typeof switchAdminTab === 'function') {
-    switchAdminTab(tabId);
-  }
-  if(tabId === 'event-attendance-section') {
-    initEventAttendanceTab();
-  }
-};
+window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
+window.renderStaffDashboardConsole = renderStaffDashboardConsole;
+window.filterSubjectsForMarksEntry = filterSubjectsForMarksEntry;
+window.loadMarksEntrySheet = loadMarksEntrySheet;
+window.calculateRowTotalMarks = calculateRowTotalMarks;
+window.saveStudentsMarksRegister = saveStudentsMarksRegister;
+window.generateAttendanceRegisterForm = generateAttendanceRegisterForm;
+window.saveFacultyAttendanceRegister = saveFacultyAttendanceRegister;
+window.handleSystemLogin = handleSystemLogin;
+window.handleLogout = handleLogout;
+window.triggerSearchFilter = triggerSearchFilter;
+window.handleFormSubmission = handleFormSubmission;
+window.handlePhotoUpload = handlePhotoUpload;
+window.calculateStudentAgeRuntime = calculateStudentAgeRuntime;
+window.toggleHostelFieldsVisibility = toggleHostelFieldsVisibility;
+window.toggleTimetablePlannerMode = toggleTimetablePlannerMode;
+window.saveTimetableRecord = saveTimetableRecord;
+window.openTimetableModalPopup = openTimetableModalPopup;
+window.closeTimetableModalPopup = closeTimetableModalPopup;
+window.renderModalTimetableGrid = renderModalTimetableGrid;
+window.syncAllFromGoogleSheets = syncAllFromGoogleSheets;
+window.printStudentProfileCard = printStudentProfileCard;
+window.initEventAttendanceTab = initEventAttendanceTab;
+window.loadStudentsForAttendance = loadStudentsForAttendance;
+window.submitEventAttendance = submitEventAttendance;
