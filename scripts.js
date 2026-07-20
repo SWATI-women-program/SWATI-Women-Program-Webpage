@@ -1541,7 +1541,6 @@ function printStudentProfileCard() {
         
         <!-- Verification Signatures Footer -->
         <div class="print-footer">
-          <div>Generated Date: ${new Date().toLocaleDateString()}</div>
           <div style="text-align: right; font-weight: 500; margin-top: 40px; border-top: 1px dashed #94a3b8; padding-top: 5px; width: 150px;">Authorized Signature</div>
         </div>
       </div>
