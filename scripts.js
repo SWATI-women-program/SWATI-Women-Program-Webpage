@@ -1399,3 +1399,166 @@ window.openTimetableModalPopup = openTimetableModalPopup;
 window.closeTimetableModalPopup = closeTimetableModalPopup;
 window.renderModalTimetableGrid = renderModalTimetableGrid;
 window.syncAllFromGoogleSheets = syncAllFromGoogleSheets;
+
+// பிரிண்ட் செய்வதற்கான புதிய பங்க்ஷன் - கோப்பின் இறுதியில் சேர்க்கவும்
+function printStudentProfileCard() {
+  const studentUid = activeUserSession.uid;
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const currentStudent = students.find(s => s[0] == studentUid);
+
+  if (!currentStudent) {
+    alert("Student profile not found to print!");
+    return;
+  }
+
+  const studentName = currentStudent[1];
+  const rollNo = currentStudent[0];
+  const className = currentStudent[2];
+  const courseName = currentStudent[3];
+  const status = currentStudent[4];
+  const dob = currentStudent[5];
+  const age = currentStudent[6];
+  const primaryContact = currentStudent[7];
+  const secondaryContact = currentStudent[8] || "-";
+  const scholasticMarks = `10th: ${currentStudent[9]}% | 12th: ${currentStudent[10]}%`;
+  const accommodation = currentStudent[11] === "Hostel" ? `Hostel: ${currentStudent[12]} (Room ${currentStudent[13]})` : "Dayscholar Division";
+  const address = currentStudent[14];
+  const photoSrc = currentStudent[15] ? fixBase64Image(currentStudent[15]) : '';
+
+  // புதிய விண்டோ ஓபன் செய்தல்
+  const printWindow = window.open('', '_blank', 'width=900,height=1200');
+  
+  // A4 அளவில் லோகோ மற்றும் விபரங்களுடன் கூடிய HTML ஸ்ட்ரக்சர்
+  printWindow.document.write(`
+    <html>
+    <head>
+      <title>Student Profile - ${rollNo}</title>
+      <style>
+        @page { size: A4; margin: 20mm; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; margin: 0; padding: 0; background: #fff; line-height: 1.5; }
+        .print-container { width: 100%; max-width: 800px; margin: 0 auto; }
+        
+        /* 4 Logos Header */
+        .logo-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #cbd5e1; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo-header img { height: 55px; object-fit: contain; }
+        
+        .title-banner { text-align: center; margin-bottom: 30px; }
+        .title-banner h2 { margin: 0; font-size: 22px; color: #0f172a; letter-spacing: 1px; }
+        .title-banner p { margin: 5px 0 0 0; font-size: 14px; color: #64748b; font-weight: 500; }
+        
+        /* Profile Section */
+        .profile-grid { display: grid; grid-template-columns: 1fr 180px; gap: 30px; margin-bottom: 30px; }
+        
+        /* Details Table */
+        .details-table { width: 100%; border-collapse: collapse; }
+        .details-table td { padding: 10px 12px; vertical-align: top; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .details-table td.label { font-weight: 600; color: #475569; width: 40%; }
+        .details-table td.value { color: #0f172a; }
+        
+        /* Photo Box */
+        .photo-wrapper { text-align: right; }
+        .photo-box { width: 150px; height: 170px; border: 1px solid #cbd5e1; border-radius: 8px; display: inline-block; overflow: hidden; background: #f8fafc; }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 12px; text-align: center; padding: 10px; }
+        
+        /* Footer */
+        .print-footer { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="print-container">
+        <!-- Top 4 Logos -->
+        <div class="logo-header">
+          <img src="SASTRA_Logo.jpg" alt="SASTRA">
+          <img src="Greaves_Logo.jpg" alt="Greaves">
+          <img src="Swati_Logo.jpg" alt="Swati">
+          <img src="Pygmalion_Foundation_logo.jpg" alt="Pygmalion">
+        </div>
+        
+        <div class="title-banner">
+          <h2>SWATI WOMEN'S PROGRAM</h2>
+          <p>Official Student Profile Record</p>
+        </div>
+        
+        <div class="profile-grid">
+          <!-- Left: Details Table -->
+          <div>
+            <table class="details-table">
+              <tr>
+                <td class="label">Student Name</td>
+                <td class="value">: <strong>${studentName}</strong></td>
+              </tr>
+              <tr>
+                <td class="label">Roll Number / ID</td>
+                <td class="value">: ${rollNo}</td>
+              </tr>
+              <tr>
+                <td class="label">Enrolled Class</td>
+                <td class="value">: ${className}</td>
+              </tr>
+              <tr>
+                <td class="label">Course Track</td>
+                <td class="value">: ${courseName}</td>
+              </tr>
+              <tr>
+                <td class="label">Date of Birth (Age)</td>
+                <td class="value">: ${dob} (${age} Years)</td>
+              </tr>
+              <tr>
+                <td class="label">Primary Contact</td>
+                <td class="value">: ${primaryContact}</td>
+              </tr>
+              <tr>
+                <td class="label">Secondary Contact</td>
+                <td class="value">: ${secondaryContact}</td>
+              </tr>
+              <tr>
+                <td class="label">Scholastic Marks</td>
+                <td class="value">: ${scholasticMarks}</td>
+              </tr>
+              <tr>
+                <td class="label">Accommodation</td>
+                <td class="value">: ${accommodation}</td>
+              </tr>
+              <tr>
+                <td class="label">Permanent Address</td>
+                <td class="value">: ${address}</td>
+              </tr>
+              <tr>
+                <td class="label">Profile Status</td>
+                <td class="value">: ${status}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- Right: Photo -->
+          <div class="photo-wrapper">
+            <div class="photo-box">
+              ${photoSrc ? `<img src="${photoSrc}">` : `<div class="photo-placeholder">No Photo Available</div>`}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Verification Signatures Footer -->
+        <div class="print-footer">
+          <div>Generated Date: ${new Date().toLocaleDateString()}</div>
+          <div style="text-align: right; font-weight: 500; margin-top: 40px; border-top: 1px dashed #94a3b8; padding-top: 5px; width: 150px;">Authorized Signature</div>
+        </div>
+      </div>
+      
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+            window.close();
+          }, 500);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+// பழைய விண்டோஸ் எக்ஸ்போர்ட் உடன் இணைக்கவும்
+window.printStudentProfileCard = printStudentProfileCard;
