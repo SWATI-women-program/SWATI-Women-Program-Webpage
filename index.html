@@ -7,6 +7,8 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js CDN for Attendance Pie Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="styles.css">
   
   <style>
@@ -35,6 +37,38 @@
     .modal-close-btn:hover { color: #ffffff; }
     .modal-body { padding: 32px; overflow-y: auto; }
     .modal-footer { padding: 20px 32px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; background: #f8fafc; }
+    
+    /* Pie Chart Responsive Wrapper Containers */
+    .charts-flex-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    .chart-box-container {
+      flex: 1;
+      min-width: 280px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--slate-200);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .chart-box-container h4 {
+      margin-bottom: 15px;
+      color: var(--slate-800);
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .pie-canvas-holder {
+      width: 200px;
+      height: 200px;
+      position: relative;
+    }
   </style>
 </head>
 <body>
@@ -501,20 +535,31 @@
             <div class="info-tile" style="grid-column: span 2;"><span>Permanent Home Address</span><p id="p-address">-</p></div>
           </div>
         </div>
+        
+        <!-- Attendance Data Analytics Section (Pie Charts View) -->
         <div class="data-section">
-          <h2>Live Attendance Monitor</h2>
-          <div class="profile-card" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 25px;">
-            <div class="info-tile" style="border-left: 4px solid var(--slate-500);"><span>Total Sessions Captured</span><p id="p-total-days">0</p></div>
-            <div class="info-tile" style="border-left: 4px solid #166534;"><span>Present Count</span><p id="p-present-days">0</p></div>
-            <div class="info-tile" style="border-left: 4px solid #991b1b;"><span>Absent Count</span><p id="p-absent-days">0</p></div>
-            <div class="info-tile" style="border-left: 4px solid var(--sky-500);"><span>Net Aggregation Metric</span><p id="p-percentage">100%</p></div>
+          <h2>Live Attendance Analytics</h2>
+          <div class="charts-flex-wrapper">
+            <div class="chart-box-container">
+              <h4>Overall Attendance Metrics</h4>
+              <div class="pie-canvas-holder">
+                <canvas id="overallAttendancePieChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-box-container">
+              <h4>Subject Wise Allocation Metrics</h4>
+              <div class="pie-canvas-holder">
+                <canvas id="subjectWiseAttendancePieChart"></canvas>
+              </div>
+            </div>
           </div>
-          <h3>Comprehensive Verification Log Ledger</h3>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>Logged Date</th><th>Hour Identifier</th><th>Captured State</th><th>Marked By Instructor</th></tr></thead>
-              <tbody id="student-att-history-tbody"></tbody>
-            </table>
+        </div>
+
+        <!-- Semester-Wise Academic Performance Tracking Section -->
+        <div class="data-section">
+          <h2>Semester Wise & Overall Mark Matrix</h2>
+          <div id="student-semester-marks-block-wrapper">
+            <p style="color: var(--slate-400);">No academic terminal performance marks found.</p>
           </div>
         </div>
       </div>
