@@ -25,12 +25,25 @@ let editingRowIndices = {
   DAILY_ATTENDANCE: -1, STUDENT_MARKS: -1
 };
 
-// Base64 போட்டோ கட் ஆகி இருந்தால் அல்லது ஸ்பேஸ் இருந்தால் சரிசெய்யும் ஃபங்க்ஷன்
+// Global handles for instance memory recycling management
+let overallPieChartInstance = null;
+let subjectPieChartInstance = null;
+
+// Fix image links or Base64 format systematically
 function fixBase64Image(base64String) {
   if (!base64String) return ''; 
   let cleanString = base64String.replace(/ /g, '+');
-  while (cleanString.length % 4 !== 0) {
-    cleanString += '=';
+  if (cleanString.startsWith('data:image') && cleanString.includes(',')) {
+    return cleanString;
+  }
+  if (cleanString.startsWith('dataimage')) {
+    cleanString = cleanString.replace('dataimage', 'data:image');
+  }
+  if (!cleanString.startsWith('data:image') && (cleanString.startsWith('jpeg') || cleanString.startsWith('png') || cleanString.startsWith('gif') || cleanString.startsWith('webp'))) {
+    return `data:image/${cleanString}`;
+  }
+  if (!cleanString.startsWith('data:image') && !cleanString.startsWith('http')) {
+    return `data:image/jpeg;base64,${cleanString}`;
   }
   return cleanString;
 }
@@ -118,6 +131,10 @@ function setupGlobalEvents() {
       
       const targetSec = document.getElementById(targetSectionId);
       if(targetSec) targetSec.classList.add("active");
+
+      if(targetSectionId === "student-profile-section" && activeUserSession.role === "STUDENT") {
+        renderStudentSelfProfileViewer();
+      }
 
       if(targetSectionId === "timetable-creator-section") {
         const configureBlock = document.getElementById("tt-configure-block");
@@ -1112,26 +1129,13 @@ function loadMarksEntrySheet() {
 function calculateRowTotalMarks(inputNode) {
   const row = inputNode.closest(".marks-row-node");
   
-  // மதிப்பெண்களை வாங்குதல் மற்றும் அதிகபட்ச வரம்புகளை செக் செய்தல் (Math.min)
-  let c1 = parseFloat(row.querySelector(".cia1").value) || 0;
-  c1 = Math.min(c1, 20);
-  
-  let c2 = parseFloat(row.querySelector(".cia2").value) || 0;
-  c2 = Math.min(c2, 20);
-  
-  let c3 = parseFloat(row.querySelector(".cia3").value) || 0;
-  c3 = Math.min(c3, 20);
-  
-  let as = parseFloat(row.querySelector(".assgn").value) || 0;
-  as = Math.min(as, 5);
-  
-  let at = parseFloat(row.querySelector(".atten").value) || 0;
-  at = Math.min(at, 5);
-  
-  let sem = parseFloat(row.querySelector(".semester-mark").value) || 0;
-  sem = Math.min(sem, 100);
+  let c1 = parseFloat(row.querySelector(".cia1").value) || 0; c1 = Math.min(c1, 20);
+  let c2 = parseFloat(row.querySelector(".cia2").value) || 0; c2 = Math.min(c2, 20);
+  let c3 = parseFloat(row.querySelector(".cia3").value) || 0; c3 = Math.min(c3, 20);
+  let as = parseFloat(row.querySelector(".assgn").value) || 0; as = Math.min(as, 5);
+  let at = parseFloat(row.querySelector(".atten").value) || 0; at = Math.min(at, 5);
+  let sem = parseFloat(row.querySelector(".semester-mark").value) || 0; sem = Math.min(sem, 100);
 
-  // பயனர் தப்பாக டைப் செய்த மதிப்பை பாக்ஸிலேயே சரிசெய்து காட்டுதல்
   row.querySelector(".cia1").value = c1;
   row.querySelector(".cia2").value = c2;
   row.querySelector(".cia3").value = c3;
@@ -1139,21 +1143,13 @@ function calculateRowTotalMarks(inputNode) {
   row.querySelector(".atten").value = at;
   row.querySelector(".semester-mark").value = sem;
 
-  // Best of Two CIA கண்டுபிடித்தல்
   const ciaMarks = [c1, c2, c3];
   ciaMarks.sort((a, b) => b - a); 
   const bestTwoCiaSum = ciaMarks[0] + ciaMarks[1];
-
-  // இன்டர்னல் மதிப்பெண் (Max 40 + 5 + 5 = 50)
   const internalTotal = bestTwoCiaSum + as + at;
-
-  // செமஸ்டர் மதிப்பெண் 100-ஐ 50-க்கு மாற்றுதல்
   const semesterConverted = sem / 2;
-
-  // இறுதி மதிப்பெண் (Max 100)
   const finalTotal = internalTotal + semesterConverted;
 
-  // ரவுண்ட் அப் செய்து அவுட்புட் பாக்ஸில் காட்டுதல்
   row.querySelector(".total-score").value = Math.round(finalTotal * 100) / 100;
 }
 
@@ -1174,7 +1170,7 @@ async function saveStudentsMarksRegister() {
     let c3 = row.querySelector(".cia3").value;
     let as = row.querySelector(".assgn").value;
     let at = row.querySelector(".atten").value;
-    let sem = row.querySelector(".semester-mark").value; // "Current" பிழை நீக்கப்பட்டு அசல் மார்க் எடுக்கப்படுகிறது
+    let sem = row.querySelector(".semester-mark").value; 
     let tot = row.querySelector(".total-score").value;
 
     let matchIdx = marksList.findIndex(m => m[0] === sId && m[1] === subCode);
@@ -1200,10 +1196,12 @@ function renderStudentSelfProfileViewer() {
   const studentUid = activeUserSession.uid;
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
   const attendance = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
+  const marks = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
   const currentStudent = students.find(s => s[0] == studentUid);
 
   if(!currentStudent) return;
 
+  // Student Basic Meta Fields Binding
   document.getElementById("p-student-name").innerText = currentStudent[1];
   document.getElementById("p-student-id").innerText = currentStudent[0];
   document.getElementById("p-class-name").innerText = currentStudent[2];
@@ -1217,28 +1215,167 @@ function renderStudentSelfProfileViewer() {
   document.getElementById("p-accommodation").innerText = currentStudent[11] === "Hostel" ? `Hostel: ${currentStudent[12]} (Room ${currentStudent[13]})` : "Dayscholar Division";
   document.getElementById("p-address").innerText = currentStudent[14];
 
+  // Photo Render Fix Engine
   const frame = document.getElementById("p-student-photo-frame");
   if(currentStudent[15]) {
-    // Base64 உடைந்து போயிருந்தால் பிக்ஸ் செய்யும் புது லாஜிக்
     const fixedImage = fixBase64Image(currentStudent[15]);
-    frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;">`;
+    frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class class=\'fas fa-user-graduate\'></i>';">`;
+  } else {
+    frame.innerHTML = `<i class="fas fa-user-graduate"></i>`;
   }
 
+  // Attendance Metrics Computation Engine
   const studentLogs = attendance.filter(log => log[3] == studentUid);
+  const totalCapturedCount = studentLogs.length;
   const presentCount = studentLogs.filter(log => log[4] === "PRESENT").length;
-  const absentCount = studentLogs.length - presentCount;
-  const ratio = studentLogs.length > 0 ? Math.round((presentCount / studentLogs.length) * 100) : 100;
+  const absentCount = totalCapturedCount - presentCount;
 
-  document.getElementById("p-total-days").innerText = studentLogs.length;
-  document.getElementById("p-present-days").innerText = presentCount;
-  document.getElementById("p-absent-days").innerText = absentCount;
-  document.getElementById("p-percentage").innerText = `${ratio}%`;
+  // 1. Overall Pie Chart Configuration Builder
+  if (overallPieChartInstance) { overallPieChartInstance.destroy(); }
+  const ctxOverall = document.getElementById('overallAttendancePieChart')?.getContext('2d');
+  if (ctxOverall) {
+    overallPieChartInstance = new Chart(ctxOverall, {
+      type: 'pie',
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          data: totalCapturedCount > 0 ? [presentCount, absentCount] : [1, 0],
+          backgroundColor: totalCapturedCount > 0 ? ['#10b981', '#ef4444'] : ['#cbd5e1', '#cbd5e1'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+      }
+    });
+  }
 
-  const tbody = document.getElementById("student-att-history-tbody");
-  tbody.innerHTML = "";
+  // 2. Subject Wise Distribution Analytics Computation Matrix
+  let subjectStatsMap = {};
   studentLogs.forEach(log => {
-    tbody.insertAdjacentHTML('beforeend', `<tr><td>${log[0]}</td><td>${log[1]}</td><td><strong>${log[4]}</strong></td><td>${log[5]}</td></tr>`);
+    let rawSubKey = log[1] || "";
+    let subCode = rawSubKey.split("_P")[0] || "General Track";
+    if (!subjectStatsMap[subCode]) { subjectStatsMap[subCode] = { present: 0, total: 0 }; }
+    subjectStatsMap[subCode].total++;
+    if (log[4] === "PRESENT") { subjectStatsMap[subCode].present++; }
   });
+
+  let subLabels = Object.keys(subjectStatsMap);
+  let subPercentages = subLabels.map(lbl => {
+    let item = subjectStatsMap[lbl];
+    return Math.round((item.present / item.total) * 100);
+  });
+
+  if (subjectPieChartInstance) { subjectPieChartInstance.destroy(); }
+  const ctxSubject = document.getElementById('subjectWiseAttendancePieChart')?.getContext('2d');
+  if (ctxSubject) {
+    subjectPieChartInstance = new Chart(ctxSubject, {
+      type: 'pie',
+      data: {
+        labels: subLabels.length > 0 ? subLabels.map(l => `${l} (%)`) : ['No Data Mapped'],
+        datasets: [{
+          data: subPercentages.length > 0 ? subPercentages : [100],
+          backgroundColor: subLabels.length > 0 ? ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#8b5cf6', '#3b82f6'] : ['#cbd5e1'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  // Semester Wise & Overall Academic Ledger Generation Rendering Engine
+  const markSectionWrapper = document.getElementById("student-semester-marks-block-wrapper");
+  if(markSectionWrapper) {
+    const studentMarks = marks.filter(m => m[0] == studentUid);
+    
+    if(studentMarks.length === 0) {
+      markSectionWrapper.innerHTML = "<p style='color: var(--slate-400); padding:10px 0;'>No academic internal/external performance marks mapped yet.</p>";
+    } else {
+      let marksBySemMap = {};
+      studentMarks.forEach(m => {
+        let semIdx = m[7] || "Semester 1"; 
+        if(!marksBySemMap[semIdx]) { marksBySemMap[semIdx] = []; }
+        marksBySemMap[semIdx].push(m);
+      });
+
+      let htmlBuffer = "";
+      let totalSumMarks = 0;
+      let subjectCountOverall = 0;
+
+      Object.keys(marksBySemMap).forEach(semesterLabel => {
+        htmlBuffer += `
+          <h4 style="font-size:15px; font-weight:700; color:var(--slate-800); margin: 20px 0 10px 0; text-transform: uppercase;">
+            <i class="fas fa-bookmark" style="color:var(--primary-accent); margin-right:8px;"></i>${semesterLabel} Records Ledger
+          </h4>
+          <div class="table-container" style="margin-top: 10px; margin-bottom: 25px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Subject Index</th>
+                  <th>CIA 1 (20)</th>
+                  <th>CIA 2 (20)</th>
+                  <th>CIA 3 (20)</th>
+                  <th>Assignment (5)</th>
+                  <th>Attendance (5)</th>
+                  <th>Internal Sum</th>
+                  <th>Semester Exam</th>
+                  <th>Aggregate (100)</th>
+                </tr>
+              </thead>
+              <tbody>`;
+        
+        marksBySemMap[semesterLabel].forEach(m => {
+          let c1 = parseFloat(m[2]) || 0;
+          let c2 = parseFloat(m[3]) || 0;
+          let c3 = parseFloat(m[4]) || 0;
+          let as = parseFloat(m[5]) || 0;
+          let at = parseFloat(m[6]) || 0;
+          let sem = parseFloat(m[7]) || 0; 
+          let tot = parseFloat(m[8]) || 0;
+
+          const ciaSorted = [c1, c2, c3].sort((a, b) => b - a);
+          const internalComputedSum = (ciaSorted[0] + ciaSorted[1]) + as + at;
+
+          totalSumMarks += tot;
+          subjectCountOverall++;
+
+          htmlBuffer += `
+            <tr>
+              <td><strong>${m[1]}</strong></td>
+              <td>${c1}</td>
+              <td>${c2}</td>
+              <td>${c3}</td>
+              <td>${as}</td>
+              <td>${at}</td>
+              <td><span style="font-weight:600; color:var(--slate-700);">${internalComputedSum}</span></td>
+              <td>${m[7]}</td>
+              <td><span style="font-weight:700; color:var(--sky-600);">${tot}</span></td>
+            </tr>`;
+        });
+
+        htmlBuffer += `</tbody></table></div>`;
+      });
+
+      let absolutePerformanceAverage = subjectCountOverall > 0 ? Math.round((totalSumMarks / subjectCountOverall) * 100) / 100 : 0;
+      htmlBuffer += `
+        <div class="profile-card" style="grid-template-columns: repeat(2, 1fr); background: var(--slate-50); border: 1px dashed var(--slate-300); margin-top:20px;">
+          <div class="info-tile" style="border-left: 4px solid var(--primary-accent);"><span>Total Cumulative Subjects</span><p>${subjectCountOverall}</p></div>
+          <div class="info-tile" style="border-left: 4px solid var(--sky-500);"><span>Overall GPA Performance / Percentage</span><p>${absolutePerformanceAverage}%</p></div>
+        </div>`;
+        
+      markSectionWrapper.innerHTML = htmlBuffer;
+    }
+  }
 }
 
 window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
