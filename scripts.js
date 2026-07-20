@@ -1561,3 +1561,126 @@ function printStudentProfileCard() {
 
 // பழைய விண்டோஸ் எக்ஸ்போர்ட் உடன் இணைக்கவும்
 window.printStudentProfileCard = printStudentProfileCard;
+
+// 1. அட்டெண்டன்ஸ் செக்ஷன் ஓபன் ஆகும்போது பேட்ச் லிஸ்ட்டை லோடு செய்யும் ஃபங்க்ஷன்
+function initEventAttendanceTab() {
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const batchSelect = document.getElementById("event-batch-select");
+  
+  // இன்றைய தேதியைத் தானாக செட் செய்ய
+  document.getElementById("event-date").value = new Date().toISOString().split('T')[0];
+  
+  // தனித்துவமான (Unique) பேட்ச்களை மட்டும் பிரித்தெடுக்க
+  const batches = [...new Set(students.map(s => s[2]))].filter(Boolean); 
+  
+  batchSelect.innerHTML = '<option value="">-- Select a Batch --</option>';
+  batches.forEach(batch => {
+    const opt = document.createElement("option");
+    opt.value = batch;
+    opt.textContent = batch;
+    batchSelect.appendChild(opt);
+  });
+  
+  document.getElementById("attendance-list-card").style.display = "none";
+}
+
+// 2. செலக்ட் செய்த பேட்ச் மாணவர்களை டேபிளில் காட்டும் ஃபங்க்ஷன்
+function loadStudentsForAttendance() {
+  const selectedBatch = document.getElementById("event-batch-select").value;
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const tbody = document.getElementById("attendance-students-body");
+  
+  if (!selectedBatch) {
+    document.getElementById("attendance-list-card").style.display = "none";
+    return;
+  }
+  
+  // குறிப்பிட்ட பேட்ச் மாணவர்களை மட்டும் ஃபில்டர் செய்தல்
+  const filteredStudents = students.filter(s => s[2] === selectedBatch);
+  
+  tbody.innerHTML = "";
+  
+  if (filteredStudents.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:#64748b;">No students found in this batch.</td></tr>`;
+  } else {
+    filteredStudents.forEach(student => {
+      const rollNo = student[0];
+      const name = student[1];
+      
+      const row = document.createElement("tr");
+      row.style.borderBottom = "1px solid #f1f5f9";
+      row.innerHTML = `
+        <td style="padding:12px;">${rollNo}</td>
+        <td style="padding:12px;"><strong>${name}</strong></td>
+        <td style="padding:12px; text-align:center;">
+          <label style="margin-right:15px; cursor:pointer; color:#16a34a; font-weight:600;">
+            <input type="radio" name="att_${rollNo}" value="Present" checked style="accent-color:#16a34a;"> Present
+          </label>
+          <label style="cursor:pointer; color:#dc2626; font-weight:600;">
+            <input type="radio" name="att_${rollNo}" value="Absent" style="accent-color:#dc2626;"> Absent
+          </label>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+  
+  document.getElementById("attendance-list-card").style.display = "block";
+}
+
+// 3. அட்டெண்டன்ஸ் டேட்டாவைச் சேமிக்கும் ஃபங்க்ஷன் (Google Sheets-க்கு அனுப்பத் தயார் செய்தல்)
+function submitEventAttendance() {
+  const date = document.getElementById("event-date").value;
+  const desc = document.getElementById("event-desc").value;
+  const batch = document.getElementById("event-batch-select").value;
+  
+  if (!date || !desc || !batch) {
+    alert("Please fill all the details before saving!");
+    return;
+  }
+  
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const filteredStudents = students.filter(s => s[2] === batch);
+  
+  const attendanceData = [];
+  
+  filteredStudents.forEach(student => {
+    const rollNo = student[0];
+    const name = student[1];
+    const radioOpts = document.getElementsByName(`att_${rollNo}`);
+    let status = "Present";
+    
+    for (const opt of radioOpts) {
+      if (opt.checked) {
+        status = opt.value;
+        break;
+      }
+    }
+    
+    attendanceData.push({
+      date: date,
+      description: desc,
+      batch: batch,
+      rollNo: rollNo,
+      name: name,
+      status: status
+    });
+  });
+  
+  console.log("Attendance Data to Save:", attendanceData);
+  alert("Attendance marked successfully local-wise! (Ready to push to Google Sheet)");
+  
+  // குறிப்பு: உங்களுடைய கூகுள் ஷீட்ஸ் பைப்லைனுடன் இதை இணைக்க google.script.run வழியாக இந்த டேட்டாவை அனுப்பிக் கொள்ளலாம்.
+}
+
+// டேப் மாறும் போது பேட்ச் விவரங்களை லோடு செய்ய
+// உங்களுடைய switchAdminTab ஃபங்க்ஷனில் இதைக் கால் செய்யவும்:
+// if(tabId === 'event-attendance-section') initEventAttendanceTab();
+window.switchAdminTabWrapper = function(tabId) {
+  if(typeof switchAdminTab === 'function') {
+    switchAdminTab(tabId);
+  }
+  if(tabId === 'event-attendance-section') {
+    initEventAttendanceTab();
+  }
+};
