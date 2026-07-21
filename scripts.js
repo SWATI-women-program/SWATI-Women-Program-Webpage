@@ -11,7 +11,7 @@ const SYSTEM_SCHEMA = {
   MASTER_SUBJECTS: ["SubjectCode", "SubjectName", "CourseCode", "Department", "RecordID"],
   MASTER_STAFFS: ["StaffID", "StaffName", "Department", "Contact", "RecordID"],
   MASTER_ALLOCATIONS: ["StaffID", "ClassID", "SubjectCode", "RecordID"],
-  MASTER_STUDENTS: ["StudentID", "StudentName", "ClassID", "CourseCode", "Status", "DOB", "Age", "PrimaryContact", "SecondaryContact", "Std10th", "Std12th", "Accommodation", "HostelName", "RoomNo", "Address", "PhotoURL", "RecordID"],
+  MASTER_STUDENTS: ["StudentID", "StudentName", "ClassID", "CourseCode", "Status", "DOB", "Age", "AadhaarNo", "PrimaryContact", "SecondaryContact", "Std10th", "Std12th", "Accommodation", "HostelName", "RoomNo", "Address", "PhotoURL", "RecordID"],
   CLASS_TIMETABLES: ["ClassID", "Day", "Hour_1", "Hour_2", "Hour_3", "Hour_4", "Hour_5", "Hour_6", "Hour_7", "RecordID"], 
   DAILY_ATTENDANCE: ["Date", "SubjectCode", "ClassID", "StudentID", "Status", "MarkedBy", "RecordID"],
   STUDENT_MARKS: ["StudentID", "SubjectCode", "CIA1", "CIA2", "CIA3", "Assignment", "Attendance", "Semester", "Total", "RecordID"],
@@ -47,6 +47,13 @@ function fixBase64Image(base64String) {
   }
   return cleanString;
 }
+
+// Browser back/forward/pageshow refresh handling for high-speed cache prevention
+window.addEventListener("pageshow", function (event) {
+  if (event.persisted || (performance && performance.navigation.type === 2)) {
+    window.location.reload();
+  }
+});
 
 window.addEventListener("DOMContentLoaded", async () => {
   initializeLocalDatabases();
@@ -297,7 +304,7 @@ function renderAdminDashboardSummary() {
   let dayscholarCount = 0, hostelerCount = 0;
   
   students.forEach(student => {
-    let accommodation = student[11] ? String(student[11]).trim().toLowerCase() : "";
+    let accommodation = student[12] ? String(student[12]).trim().toLowerCase() : "";
     if (accommodation === "dayscholar") dayscholarCount++;
     else if (accommodation === "hostel") hostelerCount++;
   });
@@ -406,10 +413,19 @@ function triggerNavigationTabChange(tabId) {
 function handleLogout() {
   activeUserSession = { role: "", uid: "", name: "" };
   localStorage.removeItem("ACTIVE_SESSION_CACHE");
-  document.getElementById("login-screen").style.display = "flex";
-  document.getElementById("global-header").style.display = "none";
-  document.getElementById("main-sidebar").style.display = "none";
-  document.getElementById("main-content-area").style.display = "none";
+  
+  const loginForm = document.getElementById("login-form-node");
+  if (loginForm) loginForm.reset();
+  
+  const uidInput = document.getElementById("login-uid");
+  const passInput = document.getElementById("login-pass");
+  if (uidInput) uidInput.value = "";
+  if (passInput) passInput.value = "";
+  
+  const errorMsg = document.getElementById("login-error");
+  if (errorMsg) errorMsg.style.display = "none";
+
+  window.location.reload();
 }
 
 function refreshFormDropdownLists() {
@@ -465,7 +481,7 @@ function handleFormSubmission(tblKey, inputControlIds, resetFormElementId = null
   });
 
   if (tblKey === "MASTER_STUDENTS" && document.getElementById("std-accom").value === "Dayscholar") {
-    formValues[12] = ""; formValues[13] = ""; 
+    formValues[13] = ""; formValues[14] = ""; 
   }
 
   let activeIndex = editingRowIndices[tblKey];
@@ -516,7 +532,7 @@ function handleUniversalEdit(tblKey, rowIdx, inputControlIds) {
 
   if(tblKey === "MASTER_STUDENTS") {
     toggleHostelFieldsVisibility();
-    const existingPhoto = fixBase64Image(targetRow[15]);
+    const existingPhoto = fixBase64Image(targetRow[16]);
     const previewBox = document.getElementById("photo-preview-box");
     if(existingPhoto) {
       previewBox.innerHTML = `<img src="${existingPhoto}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -552,7 +568,7 @@ function renderAllTables() {
   renderDatasetToTable("subject-table-body", "MASTER_SUBJECTS", [0, 1, 2, 3]);
   renderDatasetToTable("staff-table-body", "MASTER_STAFFS", [0, 1, 2, 3]);
   renderDatasetToTable("allocation-table-body", "MASTER_ALLOCATIONS", [0, 1, 2]);
-  renderDatasetToTable("student-table-body", "MASTER_STUDENTS", [0, 1, 2, 3, 4, 5, 6, 11]);
+  renderDatasetToTable("student-table-body", "MASTER_STUDENTS", [0, 1, 2, 3, 4, 5, 6, 7, 12]);
   renderAdminDashboardSummary();
 }
 
@@ -624,7 +640,7 @@ function getInputIdsForTableKey(tblKey) {
     MASTER_SUBJECTS: ["sub-code", "sub-name", "sub-course-select", "sub-dept"],
     MASTER_STAFFS: ["stf-id", "stf-name", "stf-dept", "stf-contact"],
     MASTER_ALLOCATIONS: ["alloc-staff-select", "alloc-class-select", "alloc-sub-select"],
-    MASTER_STUDENTS: ["std-id", "std-name", "std-class-select", "std-course-select", "std-status", "std-dob", "std-age", "std-primary", "std-secondary", "std-10th", "std-12th", "std-accom", "std-hostel-name", "std-room", "std-address", "std-photo-hidden"],
+    MASTER_STUDENTS: ["std-id", "std-name", "std-class-select", "std-course-select", "std-status", "std-dob", "std-age", "std-aadhaar", "std-primary", "std-secondary", "std-10th", "std-12th", "std-accom", "std-hostel-name", "std-room", "std-address", "std-photo-hidden"],
     CLASS_TIMETABLES: ["tt-class-select", "tt-day-select"]
   };
   return formsMapping[tblKey] || [];
@@ -1212,15 +1228,18 @@ function renderStudentSelfProfileViewer() {
   document.getElementById("p-status").innerText = currentStudent[4];
   document.getElementById("p-dob").innerText = currentStudent[5];
   document.getElementById("p-age").innerText = currentStudent[6];
-  document.getElementById("p-primary").innerText = currentStudent[7];
-  document.getElementById("p-secondary").innerText = currentStudent[8] || "-";
-  document.getElementById("p-marks").innerText = `10th: ${currentStudent[9]}% | 12th: ${currentStudent[10]}%`;
-  document.getElementById("p-accommodation").innerText = currentStudent[11] === "Hostel" ? `Hostel: ${currentStudent[12]} (Room ${currentStudent[13]})` : "Dayscholar Division";
-  document.getElementById("p-address").innerText = currentStudent[14];
+  if(document.getElementById("p-aadhaar")) {
+    document.getElementById("p-aadhaar").innerText = currentStudent[7] || "-";
+  }
+  document.getElementById("p-primary").innerText = currentStudent[8] || "-";
+  document.getElementById("p-secondary").innerText = currentStudent[9] || "-";
+  document.getElementById("p-marks").innerText = `10th: ${currentStudent[10]}% | 12th: ${currentStudent[11]}%`;
+  document.getElementById("p-accommodation").innerText = currentStudent[12] === "Hostel" ? `Hostel: ${currentStudent[13]} (Room ${currentStudent[14]})` : "Dayscholar Division";
+  document.getElementById("p-address").innerText = currentStudent[15] || "-";
 
   const frame = document.getElementById("p-student-photo-frame");
-  if(currentStudent[15]) {
-    const fixedImage = fixBase64Image(currentStudent[15]);
+  if(currentStudent[16]) {
+    const fixedImage = fixBase64Image(currentStudent[16]);
     frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class=\'fas fa-user-graduate\'></i>';">`;
   } else {
     frame.innerHTML = `<i class="fas fa-user-graduate"></i>`;
@@ -1393,12 +1412,13 @@ function printStudentProfileCard() {
   const status = currentStudent[4];
   const dob = currentStudent[5];
   const age = currentStudent[6];
-  const primaryContact = currentStudent[7];
-  const secondaryContact = currentStudent[8] || "-";
-  const scholasticMarks = `10th: ${currentStudent[9]}% | 12th: ${currentStudent[10]}%`;
-  const accommodation = currentStudent[11] === "Hostel" ? `Hostel: ${currentStudent[12]} (Room ${currentStudent[13]})` : "Dayscholar Division";
-  const address = currentStudent[14];
-  const photoSrc = currentStudent[15] ? fixBase64Image(currentStudent[15]) : '';
+  const aadhaarNo = currentStudent[7] || "-";
+  const primaryContact = currentStudent[8] || "-";
+  const secondaryContact = currentStudent[9] || "-";
+  const scholasticMarks = `10th: ${currentStudent[10]}% | 12th: ${currentStudent[11]}%`;
+  const accommodation = currentStudent[12] === "Hostel" ? `Hostel: ${currentStudent[13]} (Room ${currentStudent[14]})` : "Dayscholar Division";
+  const address = currentStudent[15] || "-";
+  const photoSrc = currentStudent[16] ? fixBase64Image(currentStudent[16]) : '';
 
   const printWindow = window.open('', '_blank', 'width=900,height=1200');
   
@@ -1447,6 +1467,7 @@ function printStudentProfileCard() {
               <tr><td class="label">Enrolled Class</td><td class="value">: ${className}</td></tr>
               <tr><td class="label">Course Track</td><td class="value">: ${courseName}</td></tr>
               <tr><td class="label">Date of Birth (Age)</td><td class="value">: ${dob} (${age} Years)</td></tr>
+              <tr><td class="label">Aadhaar Number</td><td class="value">: ${aadhaarNo}</td></tr>
               <tr><td class="label">Primary Contact</td><td class="value">: ${primaryContact}</td></tr>
               <tr><td class="label">Secondary Contact</td><td class="value">: ${secondaryContact}</td></tr>
               <tr><td class="label">Scholastic Marks</td><td class="value">: ${scholasticMarks}</td></tr>
