@@ -1488,7 +1488,6 @@ function initEventAttendanceTab() {
   const dateInput = document.getElementById("event-date");
   if(dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
   
-  // Extract unique batches from students database or master classes
   let batches = [...new Set(students.map(s => s[2]))].filter(Boolean);
   if(batches.length === 0) {
     batches = classes.map(c => c[0]);
@@ -1589,10 +1588,8 @@ async function submitEventAttendance() {
     payloadsForSheet.push(rowPayload);
   });
   
-  // Update Local Storage
   localStorage.setItem("EVENT_ATTENDANCE", JSON.stringify(localEventLogs));
 
-  // Sync to Google Sheets Batch Mode
   let headers = SYSTEM_SCHEMA.EVENT_ATTENDANCE;
   try {
     let res = await fetch(DEPLOYMENT_WEB_APP_URL, {
