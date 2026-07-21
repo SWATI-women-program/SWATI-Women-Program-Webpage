@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Institutional Management Portal - Enterprise Edition</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -85,19 +88,19 @@
         <h2>SWATI WOMEN'S PROGRAM</h2>
         <p>Sign in using authorized credentials only</p>
       </div>
-      <form id="login-form-node" onsubmit="event.preventDefault(); handleSystemLogin();">
+      <form id="login-form-node" autocomplete="off" onsubmit="event.preventDefault(); handleSystemLogin();">
         <div class="form-group">
           <label>USER ID</label>
           <div class="input-wrapper">
             <i class="fas fa-user-shield"></i>
-            <input type="text" id="login-uid" placeholder="Enter User ID" required>
+            <input type="text" id="login-uid" placeholder="Enter User ID" required autocomplete="new-username">
           </div>
         </div>
         <div class="form-group">
           <label>SECURITY PASSCODE</label>
           <div class="input-wrapper">
             <i class="fas fa-key"></i>
-            <input type="password" id="login-pass" placeholder="••••••••" required>
+            <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="new-password">
           </div>
         </div>
         <button type="submit" class="submit-btn">LOGIN</button>
@@ -298,11 +301,11 @@
               <div class="form-field-group"><label>Staff Employee ID</label><input type="text" id="stf-id" required></div>
               <div class="form-field-group"><label>Faculty Full Name</label><input type="text" id="stf-name" required></div>
               <div class="form-field-group"><label>Department Sector</label><input type="text" id="stf-dept" required></div>
-              <div class="form-field-group"><label>Primary Contact Mobile</label><input type="text" id="stf-contact" required></div>
+              <div class="form-field-group"><label>Contact Mobile Number</label><input type="text" id="stf-contact" required></div>
             </div>
-            <button type="submit" class="action-btn" style="margin-top: 20px;"><i class="fas fa-plus-circle"></i> Save Faculty Record</button>
+            <button type="submit" class="action-btn" style="margin-top: 20px;"><i class="fas fa-plus-circle"></i> Save Faculty</button>
           </form>
-          <div class="search-input-wrapper"><i class="fas fa-search"></i><input type="text" id="search-staff" placeholder="Filter faculty..." onkeyup="triggerSearchFilter('staff-table-body')"></div>
+          <div class="search-input-wrapper"><i class="fas fa-search"></i><input type="text" id="search-staff" placeholder="Filter staff..." onkeyup="triggerSearchFilter('staff-table-body')"></div>
           <div class="table-container">
             <table><thead><tr><th>Staff ID</th><th>Name</th><th>Department</th><th>Contact</th><th>Actions</th></tr></thead><tbody id="staff-table-body"></tbody></table>
           </div>
@@ -312,18 +315,18 @@
       <!-- 7. SUBJECT ALLOCATION SECTION -->
       <section id="subject-allocation-section" class="tab-content">
         <div class="data-section">
-          <h2>Faculty Subject Allocations</h2>
+          <h2>Subject Allocation Desk</h2>
           <form id="alloc-form-node" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_ALLOCATIONS', ['alloc-staff-select', 'alloc-class-select', 'alloc-sub-select'], 'alloc-form-node');">
             <div class="form-grid-layout">
-              <div class="form-field-group"><label>Target Instructor Name</label><select id="alloc-staff-select" required></select></div>
-              <div class="form-field-group"><label>Class Sector Sector</label><select id="alloc-class-select" required></select></div>
-              <div class="form-field-group"><label>Subject Assigned</label><select id="alloc-sub-select" required></select></div>
+              <div class="form-field-group"><label>Mapped Faculty</label><select id="alloc-staff-select" required></select></div>
+              <div class="form-field-group"><label>Target Class Sector</label><select id="alloc-class-select" required></select></div>
+              <div class="form-field-group"><label>Allocated Subject Index</label><select id="alloc-sub-select" required></select></div>
             </div>
-            <button type="submit" class="action-btn" style="margin-top: 20px;"><i class="fas fa-plus-circle"></i> Map Allocation</button>
+            <button type="submit" class="action-btn" style="margin-top: 20px;"><i class="fas fa-plus-circle"></i> Bind Allocation</button>
           </form>
           <div class="search-input-wrapper"><i class="fas fa-search"></i><input type="text" id="search-allocations" placeholder="Filter allocations..." onkeyup="triggerSearchFilter('allocation-table-body')"></div>
           <div class="table-container">
-            <table><thead><tr><th>Staff Name</th><th>Class ID</th><th>Subject Code</th><th>Actions</th></tr></thead><tbody id="allocation-table-body"></tbody></table>
+            <table><thead><tr><th>Faculty Member</th><th>Target Class</th><th>Subject Code</th><th>Actions</th></tr></thead><tbody id="allocation-table-body"></tbody></table>
           </div>
         </div>
       </section>
@@ -331,68 +334,71 @@
       <!-- 8. STUDENT PROFILES SECTION -->
       <section id="student-management-section" class="tab-content">
         <div class="data-section">
-          <h2>Student Demographic Profiles</h2>
-          <form id="student-form-node" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_STUDENTS', ['std-id', 'std-name', 'std-class-select', 'std-course-select', 'std-status', 'std-dob', 'std-age', 'std-primary', 'std-secondary', 'std-10th', 'std-12th', 'std-accom', 'std-hostel-name', 'std-room', 'std-address', 'std-photo-hidden'], 'student-form-node');">
+          <h2>Student Profiles Registry</h2>
+          <form id="student-form-node" onsubmit="event.preventDefault(); handleFormSubmission('MASTER_STUDENTS', ['std-id', 'std-name', 'std-class-select', 'std-course-select', 'std-status', 'std-dob', 'std-age', 'std-aadhaar', 'std-primary', 'std-secondary', 'std-10th', 'std-12th', 'std-accom', 'std-hostel-name', 'std-room', 'std-address', 'std-photo-hidden'], 'student-form-node');">
             <div class="form-grid-layout">
               <div class="form-field-group"><label>Student ID / Roll No</label><input type="text" id="std-id" required></div>
-              <div class="form-field-group"><label>Full Legal Name</label><input type="text" id="std-name" required></div>
-              <div class="form-field-group"><label>Class Sector Sector</label><select id="std-class-select" required></select></div>
-              <div class="form-field-group"><label>Enrolled Course Track</label><select id="std-course-select" required></select></div>
+              <div class="form-field-group"><label>Full Student Name</label><input type="text" id="std-name" required></div>
+              <div class="form-field-group"><label>Class Sector</label><select id="std-class-select" required></select></div>
+              <div class="form-field-group"><label>Course Stream</label><select id="std-course-select" required></select></div>
               <div class="form-field-group">
-                <label>Current Academic Status</label>
-                <select id="std-status">
-                  <option value="Active Pursuing">Active Pursuing</option>
-                  <option value="Completed Course">Completed Course</option>
-                  <option value="Discontinued">Discontinued</option>
+                <label>Profile Status</label>
+                <select id="std-status" required>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="DISCONTINUED">DISCONTINUED</option>
+                  <option value="ALUMNI">ALUMNI</option>
                 </select>
               </div>
               <div class="form-field-group"><label>Date of Birth</label><input type="date" id="std-dob" onchange="calculateStudentAgeRuntime()" required></div>
-              <div class="form-field-group"><label>Age (Auto-Calculated)</label><input type="number" id="std-age" readonly style="background:var(--slate-100);"></div>
-              <div class="form-field-group"><label>Primary Contact Mobile</label><input type="text" id="std-primary" required></div>
+              <div class="form-field-group"><label>Age</label><input type="number" id="std-age" readonly style="background:var(--slate-100);"></div>
+              <div class="form-field-group"><label>Aadhaar Number</label><input type="text" id="std-aadhaar" placeholder="Enter Aadhaar Number" maxlength="12" pattern="\d{12}"></div>
+              <div class="form-field-group"><label>Primary Mobile Contact</label><input type="text" id="std-primary" required></div>
               <div class="form-field-group"><label>Secondary Emergency Contact</label><input type="text" id="std-secondary"></div>
-              <div class="form-field-group"><label>10th Standard Score (%)</label><input type="number" step="0.01" id="std-10th" required></div>
-              <div class="form-field-group"><label>12th Standard Score (%)</label><input type="number" step="0.01" id="std-12th" required></div>
+              <div class="form-field-group"><label>10th Marks (%)</label><input type="number" step="0.01" id="std-10th" required></div>
+              <div class="form-field-group"><label>12th Marks (%)</label><input type="number" step="0.01" id="std-12th" required></div>
               <div class="form-field-group">
-                <label>Accommodation Sector</label>
+                <label>Accommodation Mode</label>
                 <select id="std-accom" onchange="toggleHostelFieldsVisibility()" required>
                   <option value="Dayscholar">Dayscholar</option>
-                  <option value="Hostel">Hostel Resident</option>
+                  <option value="Hostel">Hostel</option>
                 </select>
               </div>
-              <div class="form-field-group hostel-conditional-field" style="display:none;"><label>Hostel Block Name</label><input type="text" id="std-hostel-name"></div>
-              <div class="form-field-group hostel-conditional-field" style="display:none;"><label>Allocated Room Number</label><input type="text" id="std-room"></div>
+              <div class="form-field-group hostel-conditional-field" style="display:none;"><label>Hostel Name</label><input type="text" id="std-hostel-name"></div>
+              <div class="form-field-group hostel-conditional-field" style="display:none;"><label>Room Number</label><input type="text" id="std-room"></div>
               <div class="form-field-group" style="grid-column: span 2;"><label>Permanent Address</label><textarea id="std-address" rows="2" required></textarea></div>
               <div class="form-field-group">
-                <label>Upload Profile Photo</label>
+                <label>Student Photo</label>
                 <input type="file" accept="image/*" onchange="handlePhotoUpload(this)">
                 <input type="hidden" id="std-photo-hidden">
-                <div id="photo-preview-box" class="student-photo-frame" style="width: 70px; height: 70px; margin-top: 10px; display: none;"></div>
+                <div id="photo-preview-box" style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; display: none; margin-top: 8px; border: 1px solid var(--slate-200);"></div>
               </div>
             </div>
-            <button type="submit" class="action-btn" style="margin-top: 20px;"><i class="fas fa-plus-circle"></i> Save Profile Record</button>
+            <button type="submit" class="action-btn" style="margin-top: 20px;"><i class="fas fa-plus-circle"></i> Save Student Profile</button>
           </form>
           <div class="search-input-wrapper"><i class="fas fa-search"></i><input type="text" id="search-student" placeholder="Filter students..." onkeyup="triggerSearchFilter('student-table-body')"></div>
           <div class="table-container">
-            <table><thead><tr><th>Student ID</th><th>Name</th><th>Class</th><th>Course</th><th>Status</th><th>DOB</th><th>Age</th><th>Accom.</th><th>Actions</th></tr></thead><tbody id="student-table-body"></tbody></table>
+            <table><thead><tr><th>Student ID</th><th>Name</th><th>Class</th><th>Course</th><th>Status</th><th>DOB</th><th>Age</th><th>Aadhaar</th><th>Accommodation</th><th>Actions</th></tr></thead><tbody id="student-table-body"></tbody></table>
           </div>
         </div>
       </section>
 
-      <!-- 9. MATRIX PLANNER SECTION -->
+      <!-- 9. MATRIX PLANNER (TIMETABLE CREATOR) -->
       <section id="timetable-creator-section" class="tab-content">
         <div class="data-section">
-          <h2>Class Timetable Matrix Planner</h2>
+          <h2>Timetable Matrix Planner</h2>
           <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-            <button class="action-btn" onclick="toggleTimetablePlannerMode('create')"><i class="fas fa-plus"></i> Configure Slots</button>
-            <button class="action-btn" style="background: var(--sky-600);" onclick="toggleTimetablePlannerMode('existing')"><i class="fas fa-table"></i> Display Matrix</button>
-            <button class="action-btn" style="background: var(--slate-800);" onclick="openTimetableModalPopup()"><i class="fas fa-window-maximize"></i> Timetable Overlay</button>
+            <button class="action-btn" onclick="toggleTimetablePlannerMode('create')"><i class="fas fa-edit"></i> Create / Modify Schedule</button>
+            <button class="action-btn" style="background: var(--sky-600);" onclick="toggleTimetablePlannerMode('existing')"><i class="fas fa-eye"></i> View Master Matrix</button>
+            <button class="action-btn" style="background: var(--emerald-600);" onclick="openTimetableModalPopup()"><i class="fas fa-window-restore"></i> Open Full View Modal</button>
           </div>
 
-          <div id="tt-configure-block" style="display: none;">
-            <div class="form-grid-layout" style="grid-template-columns: 1fr 1fr; margin-bottom: 25px;">
-              <div class="form-field-group"><label>Target Class Sector</label><select id="tt-class-select" required></select></div>
+          <!-- Configuration Panel -->
+          <div id="tt-configure-block" style="display: none; background: var(--slate-50); padding: 25px; border-radius: 16px; border: 1px solid var(--slate-200); margin-bottom: 25px;">
+            <h3 style="font-size: 16px; margin-bottom: 15px;">Configure Day Matrix Slot</h3>
+            <div class="form-grid-layout" style="margin-bottom: 20px;">
+              <div class="form-field-group"><label>Target Class Sector</label><select id="tt-class-select"></select></div>
               <div class="form-field-group">
-                <label>Day of the Week</label>
+                <label>Day Configuration</label>
                 <select id="tt-day-select">
                   <option value="MONDAY">MONDAY</option>
                   <option value="TUESDAY">TUESDAY</option>
@@ -402,172 +408,177 @@
                 </select>
               </div>
             </div>
-            <div id="timetable-slots-dynamic-container" style="display: flex; flex-direction: column; gap: 20px;"></div>
-            <button type="button" class="action-btn" onclick="saveTimetableRecord()" style="margin-top: 25px;"><i class="fas fa-save"></i> Save Timetable Plan</button>
+            
+            <div id="timetable-slots-dynamic-container" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;"></div>
+            
+            <button class="action-btn" onclick="saveTimetableRecord()"><i class="fas fa-save"></i> Synchronize Timetable</button>
           </div>
 
-          <div id="tt-matrix-block" style="display: none; margin-top: 25px;">
+          <!-- Existing Grid View -->
+          <div id="tt-matrix-block" style="display: none;">
             <div class="tt-grid" id="tt-matrix-runtime-grid"></div>
           </div>
         </div>
       </section>
 
-      <!-- 10. EVENT / INTERNSHIP ATTENDANCE SECTION -->
-      <section id="event-attendance-section" class="tab-content">
-        <div class="data-section">
-          <h2>Event / Internship Attendance Portal</h2>
-          <div class="form-grid-layout">
-            <div class="form-field-group">
-              <label>Attendance Date</label>
-              <input type="date" id="event-date">
-            </div>
-            <div class="form-field-group">
-              <label>Which Batch Sector</label>
-              <select id="event-batch-select" onchange="loadStudentsForAttendance()">
-                <option value="">-- Select a Batch --</option>
-              </select>
-            </div>
-            <div class="form-field-group" style="grid-column: span 2;">
-              <label>Event / Internship Description</label>
-              <textarea id="event-desc" rows="2" placeholder="Enter event details, venue, or internship name..."></textarea>
-            </div>
-          </div>
-
-          <!-- Student Checklist Box -->
-          <div id="attendance-list-card" style="display:none; margin-top: 30px;">
-            <h3 style="font-size: 16px; margin-bottom: 15px; color: var(--slate-900);">Mark Student Attendance</h3>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Roll Number</th>
-                    <th>Student Name</th>
-                    <th style="text-align: center;">Mark Attendance Status</th>
-                  </tr>
-                </thead>
-                <tbody id="attendance-students-body"></tbody>
-              </table>
-            </div>
-            <button type="button" class="action-btn" onclick="submitEventAttendance()" style="margin-top: 20px; background: var(--emerald-600);">
-              <i class="fas fa-check-circle"></i> Save Event Attendance
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 11. FACULTY DASHBOARD CONSOLE -->
+      <!-- 10. FACULTY CONSOLE SECTION -->
       <section id="staff-dashboard-section" class="tab-content">
         <div class="data-section">
-          <h2>Faculty Console Dashboard</h2>
-          <div class="profile-card" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 25px;">
-            <div class="info-tile"><span>Instructor Employee ID</span><p id="stf-dash-id">-</p></div>
-            <div class="info-tile"><span>Faculty Name</span><p id="stf-dash-name">-</p></div>
-            <div class="info-tile"><span>Department Stream</span><p id="stf-dash-dept">-</p></div>
+          <h2>Faculty Workspace Overview</h2>
+          <div class="profile-card" style="margin-bottom: 25px;">
+            <div class="info-tile"><span>Faculty Staff ID</span><p id="stf-dash-id">-</p></div>
+            <div class="info-tile"><span>Instructor Name</span><p id="stf-dash-name">-</p></div>
+            <div class="info-tile"><span>Department Unit</span><p id="stf-dash-dept">-</p></div>
           </div>
-          <h3>Assigned Subject Allocations & Class Schedule Today</h3>
-          <div class="table-container" style="margin-top: 15px;">
+          <h3>Assigned Academic Subjects & Class Schedule</h3>
+          <div class="table-container">
             <table>
-              <thead><tr><th>Subject Code</th><th>Subject Name</th><th>Class Sector</th><th>Active Timetable Schedule</th></tr></thead>
+              <thead><tr><th>Subject Code</th><th>Subject Name</th><th>Class Sector</th><th>Assigned Slot / Period Status</th></tr></thead>
               <tbody id="stf-dash-allocations-tbody"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- 12. FACULTY CLASS ATTENDANCE ENTRY -->
+      <!-- 11. CLASS ATTENDANCE SECTION (STAFF) -->
       <section id="staff-attendance-section" class="tab-content">
         <div class="data-section">
-          <h2>Class Daily Attendance Register</h2>
-          <div class="inline-form">
-            <div class="form-field-group"><label>Session Date</label><input type="date" id="att-date-picker" onchange="filterSubjectsByAssignedStaff()"></div>
-            <div class="form-field-group"><label>Select Sector Class</label><select id="att-class-select" onchange="filterSubjectsByAssignedStaff()"></select></div>
+          <h2>Daily Class Attendance Register</h2>
+          <div class="form-grid-layout" style="margin-bottom: 20px;">
+            <div class="form-field-group">
+              <label>Attendance Date</label>
+              <input type="date" id="att-date-picker" onchange="generateAttendanceRegisterForm()">
+            </div>
+            <div class="form-field-group">
+              <label>Select Target Class</label>
+              <select id="att-class-select" onchange="generateAttendanceRegisterForm()"></select>
+            </div>
           </div>
-          <div id="att-students-list-view" style="margin-top: 25px;"></div>
-          <button type="button" class="action-btn" onclick="saveFacultyAttendanceRegister()" style="margin-top: 25px;"><i class="fas fa-save"></i> Commit Attendance Ledger</button>
+          <div id="att-students-list-view"></div>
+          <button class="action-btn" style="margin-top: 20px; background: var(--emerald-600);" onclick="saveFacultyAttendanceRegister()"><i class="fas fa-check-circle"></i> Save Attendance Log</button>
         </div>
       </section>
 
-      <!-- 13. FACULTY INTERNAL MARKS ENTRY -->
+      <!-- 12. INTERNAL MARKS SECTION (STAFF) -->
       <section id="staff-marks-section" class="tab-content">
         <div class="data-section">
-          <h2>Internal Marks & Performance Registry</h2>
-          <div class="form-grid-layout" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
-            <div class="form-field-group"><label>Target Class Sector</label><select id="marks-class-select" onchange="filterSubjectsForMarksEntry()"></select></div>
-            <div class="form-field-group"><label>Allocated Subject</label><select id="marks-subject-select" onchange="loadMarksEntrySheet()"></select></div>
+          <h2>Student Internal Performance Marks</h2>
+          <div class="form-grid-layout" style="margin-bottom: 20px;">
+            <div class="form-field-group">
+              <label>Class Sector</label>
+              <select id="marks-class-select" onchange="filterSubjectsForMarksEntry()"></select>
+            </div>
+            <div class="form-field-group">
+              <label>Target Subject</label>
+              <select id="marks-subject-select" onchange="loadMarksEntrySheet()"><option value="">-- Select Subject --</option></select>
+            </div>
           </div>
-          <div class="table-container" id="marks-entry-container"></div>
-          <button type="button" class="action-btn" onclick="saveStudentsMarksRegister()" style="margin-top: 20px;"><i class="fas fa-save"></i> Save Marks Performance Ledger</button>
+          <div id="marks-entry-container" class="table-container"></div>
+          <button class="action-btn" style="margin-top: 20px; background: var(--emerald-600);" onclick="saveStudentsMarksRegister()"><i class="fas fa-save"></i> Save Internal Marks Log</button>
         </div>
       </section>
 
-      <!-- 14. STUDENT SELF ACADEMIC PROFILE DESK -->
+      <!-- 13. STUDENT PROFILE DESK SECTION (STUDENT) -->
       <section id="student-profile-section" class="tab-content">
         <div class="data-section">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--slate-200); padding-bottom: 20px; margin-bottom: 30px;">
-            <h2>Student Personal Profile & Performance Desk</h2>
-            <button class="action-btn" style="background: var(--slate-800);" onclick="printStudentProfileCard()"><i class="fas fa-print"></i> Print Profile Desk</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Academic Desk Profile Details</h2>
+            <button class="action-btn" onclick="printStudentProfileCard()"><i class="fas fa-print"></i> Print Official Profile</button>
           </div>
-
           <div class="student-header-block">
             <div class="student-photo-frame" id="p-student-photo-frame"></div>
-            <div class="student-meta-summary">
-              <h3 id="p-student-name">-</h3>
-              <p style="color: var(--slate-500); font-weight: 600; margin-top: 5px;">Roll Number: <span id="p-student-id" style="color: var(--primary-accent);">-</span></p>
+            <div>
+              <h2 id="p-student-name" style="margin: 0; font-size: 22px; color: var(--slate-900);">-</h2>
+              <p style="color: var(--slate-500); margin-top: 4px; font-weight: 600;">Roll Number: <span id="p-student-id" style="color: var(--slate-800);">-</span></p>
             </div>
           </div>
 
-          <div class="profile-card">
+          <div class="profile-card" style="margin-bottom: 30px;">
             <div class="info-tile"><span>Enrolled Class</span><p id="p-class-name">-</p></div>
-            <div class="info-tile"><span>Academic Course Track</span><p id="p-course-name">-</p></div>
-            <div class="info-tile"><span>Status</span><p id="p-status">-</p></div>
+            <div class="info-tile"><span>Course Stream</span><p id="p-course-name">-</p></div>
+            <div class="info-tile"><span>Academic Status</span><p id="p-status">-</p></div>
             <div class="info-tile"><span>Date of Birth</span><p id="p-dob">-</p></div>
-            <div class="info-tile"><span>Calculated Age</span><p id="p-age">-</p></div>
-            <div class="info-tile"><span>Primary Contact</span><p id="p-primary">-</p></div>
-            <div class="info-tile"><span>Secondary Contact</span><p id="p-secondary">-</p></div>
-            <div class="info-tile"><span>Scholastic Background</span><p id="p-marks">-</p></div>
-            <div class="info-tile"><span>Accommodation Type</span><p id="p-accommodation">-</p></div>
+            <div class="info-tile"><span>Age</span><p id="p-age">-</p></div>
+            <div class="info-tile"><span>Aadhaar Number</span><p id="p-aadhaar">-</p></div>
+            <div class="info-tile"><span>Primary Mobile Contact</span><p id="p-primary">-</p></div>
+            <div class="info-tile"><span>Secondary Emergency Contact</span><p id="p-secondary">-</p></div>
+            <div class="info-tile"><span>Scholastic Marks Aggregate</span><p id="p-marks">-</p></div>
+            <div class="info-tile"><span>Accommodation Detail</span><p id="p-accommodation">-</p></div>
             <div class="info-tile" style="grid-column: span 2;"><span>Permanent Address</span><p id="p-address">-</p></div>
           </div>
 
-          <h3 style="font-size: 18px; font-weight: 800; color: var(--slate-900); margin: 35px 0 20px 0;">Attendance Analytics Summary</h3>
+          <h3>Attendance Statistics Overview</h3>
           <div class="charts-flex-wrapper">
             <div class="chart-box-container">
-              <h4>Overall Attendance Share</h4>
-              <div class="pie-canvas-holder">
-                <canvas id="overallAttendancePieChart"></canvas>
-              </div>
+              <h4>Overall Attendance Breakdown</h4>
+              <div class="pie-canvas-holder"><canvas id="overallAttendancePieChart"></canvas></div>
             </div>
             <div class="chart-box-container">
-              <h4>Subject-wise Attendance Distribution (%)</h4>
-              <div class="pie-canvas-holder">
-                <canvas id="subjectWiseAttendancePieChart"></canvas>
-              </div>
+              <h4>Subject-wise Attendance Breakdown (%)</h4>
+              <div class="pie-canvas-holder"><canvas id="subjectWiseAttendancePieChart"></canvas></div>
             </div>
           </div>
 
+          <h3>Internal Performance & Semester Marks Log</h3>
           <div id="student-semester-marks-block-wrapper"></div>
         </div>
       </section>
 
+      <!-- 14. EVENT / INTERNSHIP ATTENDANCE SECTION -->
+      <section id="event-attendance-section" class="tab-content">
+        <div class="data-section">
+          <h2>Event / Internship Attendance Module</h2>
+          <div class="form-grid-layout" style="margin-bottom: 20px;">
+            <div class="form-field-group">
+              <label>Event Date</label>
+              <input type="date" id="event-date">
+            </div>
+            <div class="form-field-group">
+              <label>Batch / Class Sector</label>
+              <select id="event-batch-select" onchange="loadStudentsForAttendance()"><option value="">-- Select Batch --</option></select>
+            </div>
+            <div class="form-field-group" style="grid-column: span 2;">
+              <label>Event Description / Internship Agenda</label>
+              <input type="text" id="event-desc" placeholder="e.g. Industrial Visit / Soft Skill Workshop">
+            </div>
+          </div>
+
+          <div id="attendance-list-card" style="display:none; margin-top:20px;">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th style="text-align:center;">Attendance Status</th>
+                  </tr>
+                </thead>
+                <tbody id="attendance-students-body"></tbody>
+              </table>
+            </div>
+            <button class="action-btn" style="margin-top: 20px; background: var(--emerald-600);" onclick="submitEventAttendance()"><i class="fas fa-save"></i> Submit Event Attendance</button>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
-  <!-- Timetable Pop-up Modal Container -->
+  <!-- Timetable Pop-up Modal View Overlay -->
   <div class="modal-overlay" id="timetable-popup-modal">
     <div class="modal-container">
       <div class="modal-header">
-        <h3>Class Timetable Grid Matrix Viewer</h3>
+        <h3>Class Timetable Grid Display</h3>
         <button class="modal-close-btn" onclick="closeTimetableModalPopup()">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="form-field-group" style="max-width: 350px; margin-bottom: 25px;">
-          <label>Choose Target Class Sector</label>
+        <div class="form-field-group" style="max-width: 320px; margin-bottom: 20px;">
+          <label>Select Class Sector for Display</label>
           <select id="modal-tt-class-select" onchange="renderModalTimetableGrid()"></select>
         </div>
         <div class="tt-grid" id="modal-tt-runtime-grid"></div>
       </div>
       <div class="modal-footer">
-        <button class="action-btn" onclick="closeTimetableModalPopup()">Close Matrix Window</button>
+        <button class="action-btn" onclick="closeTimetableModalPopup()">Close Matrix View</button>
       </div>
     </div>
   </div>
