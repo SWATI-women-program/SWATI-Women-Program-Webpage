@@ -2,7 +2,7 @@
    INSTITUTIONAL CORE SYSTEM ENGINE (MODULAR RUNTIME)
    ========================================================================== */
 
-const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbypV-SgefCuYdIwGlMDXxpFYA8qXGE3nX2dTFoHukhxeW7w64q3rD5uFmXPzOjQCa6J/exec"; 
+const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZxymX4hcs5HaEul0B4aT-85a-XjJywiCsisc-kkngD8AhTuyKdum-6wowGPzl2eaa/exec"; 
 
 const SYSTEM_SCHEMA = {
   MASTER_USERS: ["UID", "Name", "Password", "Role", "RecordID"],
@@ -14,7 +14,8 @@ const SYSTEM_SCHEMA = {
   MASTER_STUDENTS: ["StudentID", "StudentName", "ClassID", "CourseCode", "Status", "DOB", "Age", "PrimaryContact", "SecondaryContact", "Std10th", "Std12th", "Accommodation", "HostelName", "RoomNo", "Address", "PhotoURL", "RecordID"],
   CLASS_TIMETABLES: ["ClassID", "Day", "Hour_1", "Hour_2", "Hour_3", "Hour_4", "Hour_5", "Hour_6", "Hour_7", "RecordID"], 
   DAILY_ATTENDANCE: ["Date", "SubjectCode", "ClassID", "StudentID", "Status", "MarkedBy", "RecordID"],
-  STUDENT_MARKS: ["StudentID", "SubjectCode", "CIA1", "CIA2", "CIA3", "Assignment", "Attendance", "Semester", "Total", "RecordID"]
+  STUDENT_MARKS: ["StudentID", "SubjectCode", "CIA1", "CIA2", "CIA3", "Assignment", "Attendance", "Semester", "Total", "RecordID"],
+  EVENT_ATTENDANCE: ["Date", "Description", "Batch", "RollNo", "StudentName", "Status", "MarkedBy", "RecordID"]
 };
 
 let activeUserSession = { role: "", uid: "", name: "" };
@@ -22,14 +23,13 @@ let syncInProgressState = false;
 let editingRowIndices = {
   MASTER_USERS: -1, MASTER_COURSES: -1, MASTER_CLASSES: -1, MASTER_SUBJECTS: -1,
   MASTER_STAFFS: -1, MASTER_ALLOCATIONS: -1, MASTER_STUDENTS: -1, CLASS_TIMETABLES: -1,
-  DAILY_ATTENDANCE: -1, STUDENT_MARKS: -1
+  DAILY_ATTENDANCE: -1, STUDENT_MARKS: -1, EVENT_ATTENDANCE: -1
 };
 
 // Global handles for instance memory recycling management
 let overallPieChartInstance = null;
 let subjectPieChartInstance = null;
 
-// Fix image links or Base64 format systematically
 function fixBase64Image(base64String) {
   if (!base64String) return ''; 
   let cleanString = base64String.replace(/ /g, '+');
@@ -270,11 +270,11 @@ function syncAllFromGoogleSheets() {
     .finally(() => setGlobalSyncState(false));
 }
 
-async function syncWithGoogleSheet(sheetTab, payload, headers, action, recordId = "") {
-  if (!DEPLOYMENT_WEB_APP_URL) return;
+async function syncWithGoogleSheet(sheetTab, payload, headers, action, recordId = "", payloadsArray = null) {
+  if (!DEPLOYMENT_WEB_APP_URL) return;  
   
   const requestBody = {
-    tabName: sheetTab, action: action, payload: payload, headers: headers, rowId: recordId          
+    tabName: sheetTab, action: action, payload: payload, headers: headers, rowId: recordId, payloads: payloadsArray          
   };
 
   try {
@@ -318,7 +318,7 @@ function sheetTabForKey(key) {
     MASTER_USERS: "Master_Users", MASTER_COURSES: "Master_Courses", MASTER_CLASSES: "Master_Classes",
     MASTER_SUBJECTS: "Master_Subjects", MASTER_STAFFS: "Master_Staffs", MASTER_ALLOCATIONS: "Master_Allocations", 
     MASTER_STUDENTS: "Master_Students", CLASS_TIMETABLES: "Class_Timetables", DAILY_ATTENDANCE: "Daily_Class_Attendance",
-    STUDENT_MARKS: "Student_Marks"
+    STUDENT_MARKS: "Student_Marks", EVENT_ATTENDANCE: "Event_Attendance"
   };
   return map[key] || "";
 }
@@ -1205,7 +1205,6 @@ function renderStudentSelfProfileViewer() {
 
   if(!currentStudent) return;
 
-  // Student Basic Meta Fields Binding
   document.getElementById("p-student-name").innerText = currentStudent[1];
   document.getElementById("p-student-id").innerText = currentStudent[0];
   document.getElementById("p-class-name").innerText = currentStudent[2];
@@ -1219,7 +1218,6 @@ function renderStudentSelfProfileViewer() {
   document.getElementById("p-accommodation").innerText = currentStudent[11] === "Hostel" ? `Hostel: ${currentStudent[12]} (Room ${currentStudent[13]})` : "Dayscholar Division";
   document.getElementById("p-address").innerText = currentStudent[14];
 
-  // Photo Render Fix Engine
   const frame = document.getElementById("p-student-photo-frame");
   if(currentStudent[15]) {
     const fixedImage = fixBase64Image(currentStudent[15]);
@@ -1228,13 +1226,11 @@ function renderStudentSelfProfileViewer() {
     frame.innerHTML = `<i class="fas fa-user-graduate"></i>`;
   }
 
-  // Attendance Metrics Computation Engine
   const studentLogs = attendance.filter(log => log[3] == studentUid);
   const totalCapturedCount = studentLogs.length;
   const presentCount = studentLogs.filter(log => log[4] === "PRESENT").length;
   const absentCount = totalCapturedCount - presentCount;
 
-  // 1. Overall Pie Chart Configuration Builder
   if (overallPieChartInstance) { overallPieChartInstance.destroy(); }
   const ctxOverall = document.getElementById('overallAttendancePieChart')?.getContext('2d');
   if (ctxOverall) {
@@ -1258,7 +1254,6 @@ function renderStudentSelfProfileViewer() {
     });
   }
 
-  // 2. Subject Wise Distribution Analytics Computation Matrix
   let subjectStatsMap = {};
   studentLogs.forEach(log => {
     let rawSubKey = log[1] || "";
@@ -1297,7 +1292,6 @@ function renderStudentSelfProfileViewer() {
     });
   }
 
-  // Semester Wise & Overall Academic Ledger Generation Rendering Engine
   const markSectionWrapper = document.getElementById("student-semester-marks-block-wrapper");
   if(markSectionWrapper) {
     const studentMarks = marks.filter(m => m[0] == studentUid);
@@ -1482,14 +1476,23 @@ function printStudentProfileCard() {
   printWindow.document.close();
 }
 
+/* ==========================================================================
+   EVENT / INTERNSHIP ATTENDANCE ENGINE
+   ========================================================================= */
+
 function initEventAttendanceTab() {
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const classes = JSON.parse(localStorage.getItem("MASTER_CLASSES")) || [];
   const batchSelect = document.getElementById("event-batch-select");
   
   const dateInput = document.getElementById("event-date");
-  if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+  if(dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
   
-  const batches = [...new Set(students.map(s => s[2]))].filter(Boolean); 
+  // Extract unique batches from students database or master classes
+  let batches = [...new Set(students.map(s => s[2]))].filter(Boolean);
+  if(batches.length === 0) {
+    batches = classes.map(c => c[0]);
+  }
   
   if(batchSelect) {
     batchSelect.innerHTML = '<option value="">-- Select a Batch --</option>';
@@ -1546,20 +1549,29 @@ function loadStudentsForAttendance() {
   document.getElementById("attendance-list-card").style.display = "block";
 }
 
-function submitEventAttendance() {
+async function submitEventAttendance() {
   const date = document.getElementById("event-date").value;
   const desc = document.getElementById("event-desc").value;
   const batch = document.getElementById("event-batch-select").value;
   
   if (!date || !desc || !batch) {
-    alert("Please fill all the details before saving!");
+    alert("Please fill all the details (Date, Batch, Description) before saving!");
     return;
   }
   
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
   const filteredStudents = students.filter(s => s[2] === batch);
-  const attendanceData = [];
   
+  if (filteredStudents.length === 0) {
+    alert("No students to submit attendance for.");
+    return;
+  }
+
+  setGlobalSyncState(true);
+  
+  let localEventLogs = JSON.parse(localStorage.getItem("EVENT_ATTENDANCE")) || [];
+  let payloadsForSheet = [];
+
   filteredStudents.forEach(student => {
     const rollNo = student[0];
     const name = student[1];
@@ -1570,13 +1582,39 @@ function submitEventAttendance() {
       if (opt.checked) { status = opt.value; break; }
     }
     
-    attendanceData.push({
-      date: date, description: desc, batch: batch, rollNo: rollNo, name: name, status: status
-    });
+    let recordId = "EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    let rowPayload = [date, desc, batch, rollNo, name, status, activeUserSession.name || "ADMIN", recordId];
+    
+    localEventLogs.push(rowPayload);
+    payloadsForSheet.push(rowPayload);
   });
   
-  console.log("Attendance Data to Save:", attendanceData);
-  alert("Attendance marked successfully local-wise! (Ready to push to Google Sheet)");
+  // Update Local Storage
+  localStorage.setItem("EVENT_ATTENDANCE", JSON.stringify(localEventLogs));
+
+  // Sync to Google Sheets Batch Mode
+  let headers = SYSTEM_SCHEMA.EVENT_ATTENDANCE;
+  try {
+    let res = await fetch(DEPLOYMENT_WEB_APP_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        tabName: "Event_Attendance",
+        action: "BATCH_SAVE",
+        payloads: payloadsForSheet,
+        headers: headers
+      })
+    });
+    let resData = await res.json();
+    console.log("Google Sheet Event Attendance Response:", resData);
+    alert("Event/Internship Attendance saved successfully to Google Sheets!");
+  } catch (err) {
+    console.error("Error saving event attendance:", err);
+    alert("Attendance saved locally, but error syncing with Google Sheets.");
+  } finally {
+    setGlobalSyncState(false);
+  }
 }
 
 window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
