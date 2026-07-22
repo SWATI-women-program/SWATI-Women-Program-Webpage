@@ -91,7 +91,7 @@ body {
 .login-logo-wrapper {
   display: flex;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0);
   padding: 15px 30px;
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
@@ -99,7 +99,7 @@ body {
   backdrop-filter: blur(10px);
 }
 .login-logo-wrapper img {
-  height: 48px;
+  height: 60px;
   object-fit: contain;
 }
 .login-container {
