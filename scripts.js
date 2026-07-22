@@ -88,6 +88,8 @@ window.addEventListener("DOMContentLoaded", async () => {
           renderStudentSelfProfileViewer();
         } else if (activeUserSession.role === "STAFF") {
           renderStaffDashboardConsole();
+        } else if (activeUserSession.role === "ADMIN") {
+          initEventAttendanceTab();
         }
         console.log("System database successfully auto-synchronized on page startup!");
       })
@@ -267,6 +269,8 @@ function syncAllFromGoogleSheets() {
         renderStudentSelfProfileViewer();
       } else if (activeUserSession.role === "STAFF") {
         renderStaffDashboardConsole();
+      } else if (activeUserSession.role === "ADMIN") {
+        initEventAttendanceTab();
       }
       alert("System database successfully synchronized and refreshed!");
     })
@@ -376,6 +380,7 @@ function applyAuthorizationRules(role, name) {
     staffMenuOpts.forEach(el => el.style.display = "none"); 
     document.getElementById("student-menu-profile").style.display = "none";
     document.getElementById("mode-flag-badge").innerText = "ADMIN PORTAL";
+    initEventAttendanceTab();
     triggerNavigationTabChange("dashboard-section");
   } else if (role === "STAFF") {
     adminMenuOpts.forEach(el => el.style.display = "none");
@@ -1498,7 +1503,7 @@ function printStudentProfileCard() {
 }
 
 /* ==========================================================================
-   EVENT / INTERNSHIP ATTENDANCE ENGINE
+   EVENT / INTERNSHIP ATTENDANCE ENGINE (ADMIN EXCLUSIVE)
    ========================================================================= */
 
 function initEventAttendanceTab() {
