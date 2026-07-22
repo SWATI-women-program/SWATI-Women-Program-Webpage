@@ -194,18 +194,147 @@
         </div>
       </header>
 
-      <!-- 1. DASHBOARD SUMMARY SECTION -->
-      <section id="dashboard-section" class="tab-content active">
-        <div class="data-section">
-          <h2>Institutional Core Dashboard Analytics</h2>
-          <div class="profile-card" style="grid-template-columns: repeat(auto-fit, minmax(220px, 2fr));">
-            <div class="info-tile" style="border-left: 10px solid var(--primary-accent);"><span>Registered Staffs</span><p id="dash-count-staff">0</p></div>
-            <div class="info-tile" style="border-left: 10px solid #38bdf8;"><span>Total Enrolled Students</span><p id="dash-count-students">0</p></div>
-            <div class="info-tile" style="border-left: 10px solid #10b981;"><span>Dayscholar Count</span><p id="dash-count-dayscholar">0</p></div>
-            <div class="info-tile" style="border-left: 10px solid #f59e0b;"><span>Hostelers Strength</span><p id="dash-count-hosteler">0</p></div>
-          </div>
+<!-- Font Awesome Link (Icons-kkaga header label-la sethukonga) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  /* Dashboard Section Styles */
+  #dashboard-section {
+    padding: 10px;
+  }
+
+  .data-section h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text-color, #1e293b);
+    letter-spacing: -0.5px;
+  }
+
+  /* Big Card Grid Layout */
+  .profile-card-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+  }
+
+  /* Large Modern Info Tile */
+  .info-tile-large {
+    background: var(--bg-card, #ffffff);
+    border-radius: 16px;
+    padding: 28px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Hover Elevation Effect */
+  .info-tile-large:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Dynamic Left Border Accents */
+  .info-tile-large.tile-staff { border-left: 6px solid var(--primary-accent, #6366f1); }
+  .info-tile-large.tile-students { border-left: 6px solid #38bdf8; }
+  .info-tile-large.tile-dayscholar { border-left: 6px solid #10b981; }
+  .info-tile-large.tile-hosteler { border-left: 6px solid #f59e0b; }
+
+  .tile-content span {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  /* Larger Prominent Count Numbers */
+  .tile-content p {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1;
+    margin: 0;
+    color: #0f172a;
+  }
+
+  /* Background Icon Styling */
+  .tile-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    opacity: 0.85;
+  }
+
+  /* Icon Accent Colors */
+  .tile-staff .tile-icon { background: rgba(99, 102, 241, 0.1); color: var(--primary-accent, #6366f1); }
+  .tile-students .tile-icon { background: rgba(56, 189, 248, 0.1); color: #0284c7; }
+  .tile-dayscholar .tile-icon { background: rgba(16, 185, 129, 0.1); color: #059669; }
+  .tile-hosteler .tile-icon { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+</style>
+
+<!-- 1. DASHBOARD SUMMARY SECTION -->
+<section id="dashboard-section" class="tab-content active">
+  <div class="data-section">
+    <h2>Institutional Core Dashboard Analytics</h2>
+    
+    <div class="profile-card-modern">
+      <!-- Staff Card -->
+      <div class="info-tile-large tile-staff">
+        <div class="tile-content">
+          <span>Registered Staffs</span>
+          <p id="dash-count-staff">0</p>
         </div>
-      </section>
+        <div class="tile-icon">
+          <i class="fa-solid fa-user-tie"></i>
+        </div>
+      </div>
+
+      <!-- Students Card -->
+      <div class="info-tile-large tile-students">
+        <div class="tile-content">
+          <span>Total Enrolled Students</span>
+          <p id="dash-count-students">0</p>
+        </div>
+        <div class="tile-icon">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+      </div>
+
+      <!-- Dayscholar Card -->
+      <div class="info-tile-large tile-dayscholar">
+        <div class="tile-content">
+          <span>Dayscholar Count</span>
+          <p id="dash-count-dayscholar">0</p>
+        </div>
+        <div class="tile-icon">
+          <i class="fa-solid fa-bus"></i>
+        </div>
+      </div>
+
+      <!-- Hosteler Card -->
+      <div class="info-tile-large tile-hosteler">
+        <div class="tile-content">
+          <span>Hostelers Strength</span>
+          <p id="dash-count-hosteler">0</p>
+        </div>
+        <div class="tile-icon">
+          <i class="fa-solid fa-building-user"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
       <!-- 2. USER CREDENTIALS SECTION -->
       <section id="user-management-section" class="tab-content">
