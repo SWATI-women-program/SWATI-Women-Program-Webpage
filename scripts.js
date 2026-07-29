@@ -1576,92 +1576,49 @@ function loadStudentsForAttendance() {
 
 async function submitEventAttendance() {
   const date = document.getElementById("event-date").value;
-  const desc = document.getElementById("event-desc").value;
   const batch = document.getElementById("event-batch-select").value;
-  
-  if (!date || !desc || !batch) {
-    alert("Please fill all the details (Date, Batch, Description) before saving!");
-    return;
-  }
-  
-  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
-  const filteredStudents = students.filter(s => s[2] === batch);
-  
-  if (filteredStudents.length === 0) {
-    alert("No students to submit attendance for.");
+  const desc = document.getElementById("event-desc").value.trim();
+
+  if (!date || !batch || !desc) {
+    alert("Please enter Date, Batch, and Event Description!");
     return;
   }
 
+  const tbody = document.getElementById("attendance-students-body");
+  const rows = tbody.querySelectorAll("tr");
+  if (rows.length === 0) {
+    alert("No student records available to submit attendance!");
+    return;
+  }
+
+  let eventLogs = JSON.parse(localStorage.getItem("EVENT_ATTENDANCE")) || [];
   setGlobalSyncState(true);
-  
-  let localEventLogs = JSON.parse(localStorage.getItem("EVENT_ATTENDANCE")) || [];
-  let payloadsForSheet = [];
 
-  filteredStudents.forEach(student => {
-    const rollNo = student[0];
-    const name = student[1];
-    const radioOpts = document.getElementsByName(`att_${rollNo}`);
-    let status = "Present";
-    
-    for (const opt of radioOpts) {
-      if (opt.checked) { status = opt.value; break; }
+  for (let row of rows) {
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 3) continue;
+
+    const rollNo = cells[0].textContent.trim();
+    const studentName = cells[1].textContent.trim();
+    const selectedRadio = row.querySelector(`input[name="att_${rollNo}"]:checked`);
+    const status = selectedRadio ? selectedRadio.value : "Present";
+
+    let matchIdx = eventLogs.findIndex(log => log[0] === date && log[2] === batch && log[3] === rollNo && log[1] === desc);
+    let recordId = matchIdx > -1 ? eventLogs[matchIdx][eventLogs[matchIdx].length - 1] : "EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    let payload = [date, desc, batch, rollNo, studentName, status, activeUserSession.name];
+
+    if (matchIdx > -1) {
+      payload.push(recordId);
+      eventLogs[matchIdx] = payload;
+      await syncWithGoogleSheet("Event_Attendance", payload, SYSTEM_SCHEMA.EVENT_ATTENDANCE, "UPDATE", recordId);
+    } else {
+      payload.push(recordId);
+      eventLogs.push(payload);
+      await syncWithGoogleSheet("Event_Attendance", payload, SYSTEM_SCHEMA.EVENT_ATTENDANCE, "CREATE");
     }
-    
-    let recordId = "EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    let rowPayload = [date, desc, batch, rollNo, name, status, activeUserSession.name || "ADMIN", recordId];
-    
-    localEventLogs.push(rowPayload);
-    payloadsForSheet.push(rowPayload);
-  });
-  
-  localStorage.setItem("EVENT_ATTENDANCE", JSON.stringify(localEventLogs));
-
-  let headers = SYSTEM_SCHEMA.EVENT_ATTENDANCE;
-  try {
-    let res = await fetch(DEPLOYMENT_WEB_APP_URL, {
-      method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        tabName: "Event_Attendance",
-        action: "BATCH_SAVE",
-        payloads: payloadsForSheet,
-        headers: headers
-      })
-    });
-    let resData = await res.json();
-    console.log("Google Sheet Event Attendance Response:", resData);
-    alert("Event/Internship Attendance saved successfully to Google Sheets!");
-  } catch (err) {
-    console.error("Error saving event attendance:", err);
-    alert("Attendance saved locally, but error syncing with Google Sheets.");
-  } finally {
-    setGlobalSyncState(false);
   }
-}
 
-window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
-window.renderStaffDashboardConsole = renderStaffDashboardConsole;
-window.filterSubjectsForMarksEntry = filterSubjectsForMarksEntry;
-window.loadMarksEntrySheet = loadMarksEntrySheet;
-window.calculateRowTotalMarks = calculateRowTotalMarks;
-window.saveStudentsMarksRegister = saveStudentsMarksRegister;
-window.generateAttendanceRegisterForm = generateAttendanceRegisterForm;
-window.saveFacultyAttendanceRegister = saveFacultyAttendanceRegister;
-window.handleSystemLogin = handleSystemLogin;
-window.handleLogout = handleLogout;
-window.triggerSearchFilter = triggerSearchFilter;
-window.handleFormSubmission = handleFormSubmission;
-window.handlePhotoUpload = handlePhotoUpload;
-window.calculateStudentAgeRuntime = calculateStudentAgeRuntime;
-window.toggleHostelFieldsVisibility = toggleHostelFieldsVisibility;
-window.toggleTimetablePlannerMode = toggleTimetablePlannerMode;
-window.saveTimetableRecord = saveTimetableRecord;
-window.openTimetableModalPopup = openTimetableModalPopup;
-window.closeTimetableModalPopup = closeTimetableModalPopup;
-window.renderModalTimetableGrid = renderModalTimetableGrid;
-window.syncAllFromGoogleSheets = syncAllFromGoogleSheets;
-window.printStudentProfileCard = printStudentProfileCard;
-window.initEventAttendanceTab = initEventAttendanceTab;
-window.loadStudentsForAttendance = loadStudentsForAttendance;
-window.submitEventAttendance = submitEventAttendance;
+  localStorage.setItem("EVENT_ATTENDANCE", JSON.stringify(eventLogs));
+  setGlobalSyncState(false);
+  alert("Event / Internship Attendance log saved and synchronized successfully!");
+}
