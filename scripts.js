@@ -2,7 +2,7 @@
    INSTITUTIONAL CORE SYSTEM ENGINE (MODULAR RUNTIME)
    ========================================================================== */
 
-const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyz7QcZQLNti_DroD5kGkIiXTyn0dJ_tC5jWvjvGGHVcBNk-51qbxgXspnc5isEMsyz/exec"; 
+const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZxymX4hcs5HaEul0B4aT-85a-XjJywiCsisc-kkngD8AhTuyKdum-6wowGPzl2eaa/exec"; 
 
 const SYSTEM_SCHEMA = {
   MASTER_USERS: ["UID", "Name", "Password", "Role", "RecordID"],
@@ -26,11 +26,9 @@ let editingRowIndices = {
   DAILY_ATTENDANCE: -1, STUDENT_MARKS: -1, EVENT_ATTENDANCE: -1
 };
 
+// Global handles for instance memory recycling management
 let overallPieChartInstance = null;
 let subjectPieChartInstance = null;
-
-let activeSelectedSubjectRuntime = "";
-let activeSelectedPeriodRuntime = "";
 
 function fixBase64Image(base64String) {
   if (!base64String) return ''; 
@@ -50,7 +48,7 @@ function fixBase64Image(base64String) {
   return cleanString;
 }
 
-// Browser Back / Cache Refresh Handler
+// Browser back/forward/pageshow refresh handling for high-speed cache prevention
 window.addEventListener("pageshow", function (event) {
   if (event.persisted || (performance && performance.navigation.type === 2)) {
     window.location.reload();
@@ -68,6 +66,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     datePicker.value = new Date().toISOString().split('T')[0];
   }
 
+  console.log("System Initializing: Fetching data from Google Sheets...");
   if (!syncInProgressState) {
     setGlobalSyncState(true);
     fetch(`${DEPLOYMENT_WEB_APP_URL}?action=fetchAll`)
@@ -92,6 +91,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         } else if (activeUserSession.role === "ADMIN") {
           initEventAttendanceTab();
         }
+        console.log("System database successfully auto-synchronized on page startup!");
       })
       .catch(err => {
         console.error("Connection failure with backend server during auto-sync:", err);
@@ -127,27 +127,6 @@ function generateTimetableSlotsUI() {
   }
 }
 
-function resetTabSelections(targetSectionId) {
-  // Clear Active selections when navigating across tabs or options
-  activeSelectedSubjectRuntime = "";
-  activeSelectedPeriodRuntime = "";
-
-  const attList = document.getElementById("att-students-list-view");
-  if (attList) attList.innerHTML = "";
-
-  const marksContainer = document.getElementById("marks-entry-container");
-  if (marksContainer) marksContainer.innerHTML = "";
-
-  const marksSubSelect = document.getElementById("marks-subject-select");
-  if (marksSubSelect) marksSubSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-
-  const attClassSelect = document.getElementById("att-class-select");
-  if (attClassSelect) attClassSelect.value = "";
-
-  const marksClassSelect = document.getElementById("marks-class-select");
-  if (marksClassSelect) marksClassSelect.value = "";
-}
-
 function setupGlobalEvents() {
   const menuItems = document.querySelectorAll(".menu-item");
   menuItems.forEach(item => {
@@ -161,9 +140,6 @@ function setupGlobalEvents() {
       
       const targetSec = document.getElementById(targetSectionId);
       if(targetSec) targetSec.classList.add("active");
-
-      // Auto-Reset Old Selections
-      resetTabSelections(targetSectionId);
 
       if(targetSectionId === "student-profile-section" && activeUserSession.role === "STUDENT") {
         renderStudentSelfProfileViewer();
@@ -296,11 +272,11 @@ function syncAllFromGoogleSheets() {
       } else if (activeUserSession.role === "ADMIN") {
         initEventAttendanceTab();
       }
-      alert("System database successfully synchronized!");
+      alert("System database successfully synchronized and refreshed!");
     })
     .catch(err => {
       console.error(err);
-      alert("Connection failure with backend server.");
+      alert("Connection failure with backend server. Check configurations.");
     })
     .finally(() => setGlobalSyncState(false));
 }
@@ -437,7 +413,6 @@ function triggerNavigationTabChange(tabId) {
     if (s.id === tabId) s.classList.add("active");
     else s.classList.remove("active");
   });
-  resetTabSelections(tabId);
 }
 
 function handleLogout() {
@@ -447,6 +422,14 @@ function handleLogout() {
   const loginForm = document.getElementById("login-form-node");
   if (loginForm) loginForm.reset();
   
+  const uidInput = document.getElementById("login-uid");
+  const passInput = document.getElementById("login-pass");
+  if (uidInput) uidInput.value = "";
+  if (passInput) passInput.value = "";
+  
+  const errorMsg = document.getElementById("login-error");
+  if (errorMsg) errorMsg.style.display = "none";
+
   window.location.reload();
 }
 
@@ -464,7 +447,6 @@ function refreshFormDropdownLists() {
   populateSelectControl("att-class-select", classList, 0, 1);
   populateSelectControl("marks-class-select", classList, 0, 1);
   populateSelectControl("modal-tt-class-select", classList, 0, 1);
-  populateSelectControl("att-swap-staff-select", staffList, 1, 0, "-- Select Swap Faculty --");
 
   populateSelectControl("alloc-staff-select", staffList, 1, 0); 
   populateSelectControl("alloc-class-select", classList, 0, 1);
@@ -494,14 +476,6 @@ function populateSelectControl(elementId, dataset, valueColIndex, textColIndex, 
     opt.text = `${row[valueColIndex]} - ${row[textColIndex]}`;
     selectNode.appendChild(opt);
   });
-}
-
-function toggleSwapFacultyField() {
-  const attMode = document.getElementById("att-mode-select").value;
-  const swapGroup = document.getElementById("swap-staff-field-group");
-  if (swapGroup) {
-    swapGroup.style.display = (attMode === "SWAP") ? "flex" : "none";
-  }
 }
 
 function handleFormSubmission(tblKey, inputControlIds, resetFormElementId = null) {
@@ -572,7 +546,7 @@ function handleUniversalEdit(tblKey, rowIdx, inputControlIds) {
       previewBox.style.display = "none";
     }
   }
-  alert("Row parameters loaded into form. Modify and submit to save.");
+  alert("Row parameters successfully bound to UI editors! Edit and commit form.");
 }
 
 function handleUniversalDelete(tblKey, rowIdx) {
@@ -878,6 +852,9 @@ function redirectToAttendanceDirectly(classId, subjectCode, hourNumber) {
   }
 }
 
+let activeSelectedSubjectRuntime = "";
+let activeSelectedPeriodRuntime = "";
+
 function filterSubjectsByAssignedStaff() {
   const classSelect = document.getElementById("att-class-select");
   const listContainer = document.getElementById("att-students-list-view");
@@ -920,7 +897,9 @@ function filterSubjectsByAssignedStaff() {
     const isMarkedByMe = attendanceLogs.some(log => log[0] === activeDate && log[1].startsWith(sub[0]) && log[2] === selectedClass && log[5] === activeUserSession.name);
     let statusBadge = `<span class="mode-badge" style="background:#fee2e2; color:#b91c1c;">Pending</span>`;
     
-    if (isMarkedByMe) {
+    if (new Date(activeDate) < new Date("2026-07-09")) {
+      statusBadge = `<span class="mode-badge" style="background:var(--slate-200); color:var(--slate-600);">No Action</span>`;
+    } else if (isMarkedByMe) {
       statusBadge = `<span class="mode-badge" style="background:#d1fae5; color:#065f46;">Completed (You)</span>`;
     } else if (isAlreadyMarkedByCoStaff) {
       statusBadge = `<span class="mode-badge" style="background:#e0f2fe; color:#0369a1;">Updated (Co-Staff)</span>`;
@@ -942,7 +921,7 @@ function handleSubjectClickForPeriodSelection(subCode, classId) {
   const studentWrapper = document.getElementById("dynamic-student-checklist-wrapper");
   if (!periodWrapper) return;
   
-  if (studentWrapper) studentWrapper.innerHTML = ""; 
+  studentWrapper.innerHTML = ""; 
   const timetables = JSON.parse(localStorage.getItem("CLASS_TIMETABLES")) || [];
   const attendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
   const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
@@ -976,7 +955,7 @@ function handleSubjectClickForPeriodSelection(subCode, classId) {
     let alreadyMarkedLog = attendanceLogs.find(log => log[0] === activeDateVal && log[1] === subColumnKey && log[2] === classId);
 
     if (alreadyMarkedLog) {
-      html += `<button type="button" class="action-btn" onclick="handlePeriodClickForStudentList(${p}, '${classId}')" style="background:#059669;">Period ${p} (Completed - Edit)</button>`;
+      html += `<button type="button" class="action-btn" disabled style="background:#059669; opacity:0.75;">Period ${p} (Done)</button>`;
     } else {
       html += `<button type="button" class="action-btn" onclick="handlePeriodClickForStudentList(${p}, '${classId}')" style="background:var(--sky-600);">Period ${p}</button>`;
     }
@@ -994,7 +973,7 @@ function handlePeriodClickForStudentList(periodNumber, classId) {
   const classStudents = studentsList.filter(s => s[2] === classId);
 
   if (classStudents.length === 0) {
-    studentWrapper.innerHTML = "<p>No student profiles registered in this class.</p>";
+    studentWrapper.innerHTML = "<p>No student profiles registered in this section class.</p>";
     return;
   }
 
@@ -1003,7 +982,7 @@ function handlePeriodClickForStudentList(periodNumber, classId) {
 
   let html = `
     <div class="form-field-group" style="margin-top:20px;">
-      <label>Step 3: Attendance Register (Subject: ${activeSelectedSubjectRuntime} | Period: ${periodNumber})</label>
+      <label>Step 3: Checklist (Subject: ${activeSelectedSubjectRuntime} | Period: ${periodNumber})</label>
       <table class="att-list-table">
         <thead><tr><th>Roll No</th><th>Full Name</th><th style="text-align:center;">Status</th></tr></thead>
         <tbody id="register-entries">
@@ -1047,16 +1026,9 @@ function generateAttendanceRegisterForm() {
 async function saveFacultyAttendanceRegister() {
   const classId = document.getElementById("att-class-select").value;
   const activeDate = document.getElementById("att-date-picker").value;
-  const attMode = document.getElementById("att-mode-select").value;
-  const swapFaculty = document.getElementById("att-swap-staff-select").value;
-
+  
   if (!activeSelectedSubjectRuntime || !activeSelectedPeriodRuntime) {
-    alert("Please select subject and click active period hour first!");
-    return;
-  }
-
-  if (attMode === "SWAP" && !swapFaculty) {
-    alert("Please select the Substitute Faculty for Swap Attendance!");
+    alert("Please select subject and click active period hour checklist first!");
     return;
   }
 
@@ -1068,13 +1040,12 @@ async function saveFacultyAttendanceRegister() {
   setGlobalSyncState(true);
 
   const recordSubKey = `${activeSelectedSubjectRuntime}_P${activeSelectedPeriodRuntime}`;
-  const markedByTag = (attMode === "SWAP") ? `SWAP:${swapFaculty} (by ${activeUserSession.name})` : activeUserSession.name;
 
   for (let btn of buttons) {
     let studentId = btn.id.replace("att-btn-", "");
     let capturedStatus = btn.getAttribute("data-status");
     let matchIdx = logs.findIndex(log => log[0] === activeDate && log[1] === recordSubKey && log[2] === classId && log[3] === studentId);
-    let payload = [activeDate, recordSubKey, classId, studentId, capturedStatus, markedByTag];
+    let payload = [activeDate, recordSubKey, classId, studentId, capturedStatus, activeUserSession.name];
     let recordId = matchIdx > -1 ? logs[matchIdx][logs[matchIdx].length - 1] : "ATT-" + Date.now() + "-" + Math.floor(Math.random()*100);
     
     if (matchIdx > -1) {
@@ -1093,8 +1064,8 @@ async function saveFacultyAttendanceRegister() {
 }
 
 /* ==========================================================================
-   INTERNAL MARKS LOGIC & RECOVERY (FULL CODE RECOVERY)
-   ========================================================================== */
+   MARKS AND STUDENT SELF PROFILE REGISTRY FUNCTIONS
+   ========================================================================= */
 
 function filterSubjectsForMarksEntry() {
   const classId = document.getElementById("marks-class-select").value;
@@ -1129,7 +1100,7 @@ function loadMarksEntrySheet() {
   if(!container) return;
 
   if(!classId || !subCode) {
-    container.innerHTML = "<p style='padding:15px; color: var(--slate-400);'>Select Class Sector and Target Subject to proceed.</p>";
+    container.innerHTML = "<p style='padding:15px;'>Select parameters to load.</p>";
     return;
   }
 
@@ -1138,7 +1109,7 @@ function loadMarksEntrySheet() {
   const classStudents = studentsList.filter(s => s[2] === classId);
 
   if(classStudents.length === 0) {
-    container.innerHTML = "<p style='padding:15px;'>No student profiles registered in this class.</p>";
+    container.innerHTML = "<p style='padding:15px;'>No student profiles mapped.</p>";
     return;
   }
 
@@ -1166,13 +1137,13 @@ function loadMarksEntrySheet() {
       <tr class="marks-row-node" data-student-id="${st[0]}">
         <td><strong>${st[0]}</strong></td>
         <td>${st[1]}</td>
-        <td><input type="number" class="marks-input cia1" value="${record[2] || 0}" min="0" max="20" onchange="calculateMarksTotal(this)"></td>
-        <td><input type="number" class="marks-input cia2" value="${record[3] || 0}" min="0" max="20" onchange="calculateMarksTotal(this)"></td>
-        <td><input type="number" class="marks-input cia3" value="${record[4] || 0}" min="0" max="20" onchange="calculateMarksTotal(this)"></td>
-        <td><input type="number" class="marks-input assignment" value="${record[5] || 0}" min="0" max="5" onchange="calculateMarksTotal(this)"></td>
-        <td><input type="number" class="marks-input attendance" value="${record[6] || 0}" min="0" max="5" onchange="calculateMarksTotal(this)"></td>
-        <td><input type="number" class="marks-input semester" value="${record[7] || 0}" min="0" max="100" onchange="calculateMarksTotal(this)"></td>
-        <td><strong class="total-marks-val">${record[8] || 0}</strong></td>
+        <td><input type="number" class="marks-input cia1" value="${record[2] || 0}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input cia2" value="${record[3] || 0}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input cia3" value="${record[4] || 0}" min="0" max="20" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input assgn" value="${record[5] || 0}" min="0" max="5" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input atten" value="${record[6] || 0}" min="0" max="5" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input semester-mark" value="${record[7] || 0}" min="0" max="100" oninput="calculateRowTotalMarks(this)"></td>
+        <td><input type="number" class="marks-input total-score" value="${record[8] || 0}" readonly style="background:#e2e8f0; font-weight:700;"></td>
       </tr>`;
   });
 
@@ -1180,236 +1151,517 @@ function loadMarksEntrySheet() {
   container.innerHTML = html;
 }
 
-function calculateMarksTotal(inputNode) {
-  const row = inputNode.closest("tr");
-  if(!row) return;
+function calculateRowTotalMarks(inputNode) {
+  const row = inputNode.closest(".marks-row-node");
+  
+  let c1 = parseFloat(row.querySelector(".cia1").value) || 0; c1 = Math.min(c1, 20);
+  let c2 = parseFloat(row.querySelector(".cia2").value) || 0; c2 = Math.min(c2, 20);
+  let c3 = parseFloat(row.querySelector(".cia3").value) || 0; c3 = Math.min(c3, 20);
+  let as = parseFloat(row.querySelector(".assgn").value) || 0; as = Math.min(as, 5);
+  let at = parseFloat(row.querySelector(".atten").value) || 0; at = Math.min(at, 5);
+  let sem = parseFloat(row.querySelector(".semester-mark").value) || 0; sem = Math.min(sem, 100);
 
-  const cia1 = parseFloat(row.querySelector(".cia1")?.value || 0);
-  const cia2 = parseFloat(row.querySelector(".cia2")?.value || 0);
-  const cia3 = parseFloat(row.querySelector(".cia3")?.value || 0);
-  const assign = parseFloat(row.querySelector(".assignment")?.value || 0);
-  const att = parseFloat(row.querySelector(".attendance")?.value || 0);
+  row.querySelector(".cia1").value = c1;
+  row.querySelector(".cia2").value = c2;
+  row.querySelector(".cia3").value = c3;
+  row.querySelector(".assgn").value = as;
+  row.querySelector(".atten").value = at;
+  row.querySelector(".semester-mark").value = sem;
 
-  // Best of CIAs normalized + Assignment + Attendance
-  const ciaAvg = (cia1 + cia2 + cia3) / 3;
-  const internalTotal = Math.min(100, Math.round(ciaAvg + assign + att));
+  const ciaMarks = [c1, c2, c3];
+  ciaMarks.sort((a, b) => b - a); 
+  const bestTwoCiaSum = ciaMarks[0] + ciaMarks[1];
+  const internalTotal = bestTwoCiaSum + as + at;
+  const semesterConverted = sem / 2;
+  const finalTotal = internalTotal + semesterConverted;
 
-  const totalEl = row.querySelector(".total-marks-val");
-  if(totalEl) totalEl.innerText = internalTotal;
+  row.querySelector(".total-score").value = Math.round(finalTotal * 100) / 100;
 }
 
 async function saveStudentsMarksRegister() {
-  const classId = document.getElementById("marks-class-select").value;
   const subCode = document.getElementById("marks-subject-select").value;
-
-  if(!classId || !subCode) {
-    alert("Please select Class and Subject parameters!");
-    return;
-  }
-
   const rows = document.querySelectorAll(".marks-row-node");
-  if(rows.length === 0) return;
+  if(!subCode || rows.length === 0) {
+    alert("No records loaded to process!"); return;
+  }
 
   let marksList = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
   setGlobalSyncState(true);
 
-  for(let r of rows) {
-    let studentId = r.getAttribute("data-student-id");
-    let c1 = r.querySelector(".cia1").value || "0";
-    let c2 = r.querySelector(".cia2").value || "0";
-    let c3 = r.querySelector(".cia3").value || "0";
-    let assign = r.querySelector(".assignment").value || "0";
-    let att = r.querySelector(".attendance").value || "0";
-    let sem = r.querySelector(".semester").value || "0";
-    let total = r.querySelector(".total-marks-val").innerText || "0";
+  for(let row of rows) {
+    let sId = row.getAttribute("data-student-id");
+    let c1 = row.querySelector(".cia1").value;
+    let c2 = row.querySelector(".cia2").value;
+    let c3 = row.querySelector(".cia3").value;
+    let as = row.querySelector(".assgn").value;
+    let at = row.querySelector(".atten").value;
+    let sem = row.querySelector(".semester-mark").value; 
+    let tot = row.querySelector(".total-score").value;
 
-    let matchIdx = marksList.findIndex(m => m[0] === studentId && m[1] === subCode);
-    let payload = [studentId, subCode, c1, c2, c3, assign, att, sem, total];
+    let matchIdx = marksList.findIndex(m => m[0] === sId && m[1] === subCode);
+    let payload = [sId, subCode, c1, c2, c3, as, at, sem, tot]; 
     let recordId = matchIdx > -1 ? marksList[matchIdx][marksList[matchIdx].length - 1] : "MRK-" + Date.now() + "-" + Math.floor(Math.random()*100);
+    payload.push(recordId);
 
-    if (matchIdx > -1) {
-      payload.push(recordId); marksList[matchIdx] = payload;
+    if(matchIdx > -1) {
+      marksList[matchIdx] = payload;
       await syncWithGoogleSheet("Student_Marks", payload, SYSTEM_SCHEMA.STUDENT_MARKS, "UPDATE", recordId);
     } else {
-      payload.push(recordId); marksList.push(payload);
+      marksList.push(payload);
       await syncWithGoogleSheet("Student_Marks", payload, SYSTEM_SCHEMA.STUDENT_MARKS, "CREATE");
     }
   }
 
   localStorage.setItem("STUDENT_MARKS", JSON.stringify(marksList));
   setGlobalSyncState(false);
-  alert("Internal marks registered and synchronized!");
+  alert("Marks performance register synchronized successfully!");
+}
+
+function renderStudentSelfProfileViewer() {
+  const studentUid = activeUserSession.uid;
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const attendance = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
+  const marks = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
+  const currentStudent = students.find(s => s[0] == studentUid);
+
+  if(!currentStudent) return;
+
+  document.getElementById("p-student-name").innerText = currentStudent[1];
+  document.getElementById("p-student-id").innerText = currentStudent[0];
+  document.getElementById("p-class-name").innerText = currentStudent[2];
+  document.getElementById("p-course-name").innerText = currentStudent[3];
+  document.getElementById("p-status").innerText = currentStudent[4];
+  document.getElementById("p-dob").innerText = currentStudent[5];
+  document.getElementById("p-age").innerText = currentStudent[6];
+  if(document.getElementById("p-aadhaar")) {
+    document.getElementById("p-aadhaar").innerText = currentStudent[7] || "-";
+  }
+  document.getElementById("p-primary").innerText = currentStudent[8] || "-";
+  document.getElementById("p-secondary").innerText = currentStudent[9] || "-";
+  document.getElementById("p-marks").innerText = `10th: ${currentStudent[10]}% | 12th: ${currentStudent[11]}%`;
+  document.getElementById("p-accommodation").innerText = currentStudent[12] === "Hostel" ? `Hostel: ${currentStudent[13]} (Room ${currentStudent[14]})` : "Dayscholar Division";
+  document.getElementById("p-address").innerText = currentStudent[15] || "-";
+
+  const frame = document.getElementById("p-student-photo-frame");
+  if(currentStudent[16]) {
+    const fixedImage = fixBase64Image(currentStudent[16]);
+    frame.innerHTML = `<img src="${fixedImage}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src=''; this.parentElement.innerHTML='<i class=\'fas fa-user-graduate\'></i>';">`;
+  } else {
+    frame.innerHTML = `<i class="fas fa-user-graduate"></i>`;
+  }
+
+  const studentLogs = attendance.filter(log => log[3] == studentUid);
+  const totalCapturedCount = studentLogs.length;
+  const presentCount = studentLogs.filter(log => log[4] === "PRESENT").length;
+  const absentCount = totalCapturedCount - presentCount;
+
+  if (overallPieChartInstance) { overallPieChartInstance.destroy(); }
+  const ctxOverall = document.getElementById('overallAttendancePieChart')?.getContext('2d');
+  if (ctxOverall) {
+    overallPieChartInstance = new Chart(ctxOverall, {
+      type: 'pie',
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          data: totalCapturedCount > 0 ? [presentCount, absentCount] : [1, 0],
+          backgroundColor: totalCapturedCount > 0 ? ['#10b981', '#ef4444'] : ['#cbd5e1', '#cbd5e1'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  let subjectStatsMap = {};
+  studentLogs.forEach(log => {
+    let rawSubKey = log[1] || "";
+    let subCode = rawSubKey.split("_P")[0] || "General Track";
+    if (!subjectStatsMap[subCode]) { subjectStatsMap[subCode] = { present: 0, total: 0 }; }
+    subjectStatsMap[subCode].total++;
+    if (log[4] === "PRESENT") { subjectStatsMap[subCode].present++; }
+  });
+
+  let subLabels = Object.keys(subjectStatsMap);
+  let subPercentages = subLabels.map(lbl => {
+    let item = subjectStatsMap[lbl];
+    return Math.round((item.present / item.total) * 100);
+  });
+
+  if (subjectPieChartInstance) { subjectPieChartInstance.destroy(); }
+  const ctxSubject = document.getElementById('subjectWiseAttendancePieChart')?.getContext('2d');
+  if (ctxSubject) {
+    subjectPieChartInstance = new Chart(ctxSubject, {
+      type: 'pie',
+      data: {
+        labels: subLabels.length > 0 ? subLabels.map(l => `${l} (%)`) : ['No Data Mapped'],
+        datasets: [{
+          data: subPercentages.length > 0 ? subPercentages : [100],
+          backgroundColor: subLabels.length > 0 ? ['#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#8b5cf6', '#3b82f6'] : ['#cbd5e1'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  const markSectionWrapper = document.getElementById("student-semester-marks-block-wrapper");
+  if(markSectionWrapper) {
+    const studentMarks = marks.filter(m => m[0] == studentUid);
+    
+    if(studentMarks.length === 0) {
+      markSectionWrapper.innerHTML = "<p style='color: var(--slate-400); padding:10px 0;'>No academic internal/external performance marks mapped yet.</p>";
+    } else {
+      let marksBySemMap = {};
+      studentMarks.forEach(m => {
+        let semIdx = m[7] || "Semester 1"; 
+        if(!marksBySemMap[semIdx]) { marksBySemMap[semIdx] = []; }
+        marksBySemMap[semIdx].push(m);
+      });
+
+      let htmlBuffer = "";
+      let totalSumMarks = 0;
+      let subjectCountOverall = 0;
+
+      Object.keys(marksBySemMap).forEach(semesterLabel => {
+        htmlBuffer += `
+          <h4 style="font-size:15px; font-weight:700; color:var(--slate-800); margin: 20px 0 10px 0; text-transform: uppercase;">
+            <i class="fas fa-bookmark" style="color:var(--primary-accent); margin-right:8px;"></i>${semesterLabel} Records Ledger
+          </h4>
+          <div class="table-container" style="margin-top: 10px; margin-bottom: 25px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Subject Index</th>
+                  <th>CIA 1 (20)</th>
+                  <th>CIA 2 (20)</th>
+                  <th>CIA 3 (20)</th>
+                  <th>Assignment (5)</th>
+                  <th>Attendance (5)</th>
+                  <th>Internal Sum</th>
+                  <th>Semester Exam</th>
+                  <th>Aggregate (100)</th>
+                </tr>
+              </thead>
+              <tbody>`;
+        
+        marksBySemMap[semesterLabel].forEach(m => {
+          let c1 = parseFloat(m[2]) || 0;
+          let c2 = parseFloat(m[3]) || 0;
+          let c3 = parseFloat(m[4]) || 0;
+          let as = parseFloat(m[5]) || 0;
+          let at = parseFloat(m[6]) || 0;
+          let sem = parseFloat(m[7]) || 0; 
+          let tot = parseFloat(m[8]) || 0;
+
+          const ciaSorted = [c1, c2, c3].sort((a, b) => b - a);
+          const internalComputedSum = (ciaSorted[0] + ciaSorted[1]) + as + at;
+
+          totalSumMarks += tot;
+          subjectCountOverall++;
+
+          htmlBuffer += `
+            <tr>
+              <td><strong>${m[1]}</strong></td>
+              <td>${c1}</td>
+              <td>${c2}</td>
+              <td>${c3}</td>
+              <td>${as}</td>
+              <td>${at}</td>
+              <td><span style="font-weight:600; color:var(--slate-700);">${internalComputedSum}</span></td>
+              <td>${m[7]}</td>
+              <td><span style="font-weight:700; color:var(--sky-600);">${tot}</span></td>
+            </tr>`;
+        });
+
+        htmlBuffer += `</tbody></table></div>`;
+      });
+
+      let absolutePerformanceAverage = subjectCountOverall > 0 ? Math.round((totalSumMarks / subjectCountOverall) * 100) / 100 : 0;
+      htmlBuffer += `
+        <div class="profile-card" style="grid-template-columns: repeat(2, 1fr); background: var(--slate-50); border: 1px dashed var(--slate-300); margin-top:20px;">
+          <div class="info-tile" style="border-left: 4px solid var(--primary-accent);"><span>Total Cumulative Subjects</span><p>${subjectCountOverall}</p></div>
+          <div class="info-tile" style="border-left: 4px solid #38bdf8;"><span>Overall GPA Performance / Percentage</span><p>${absolutePerformanceAverage}%</p></div>
+        </div>`;
+        
+      markSectionWrapper.innerHTML = htmlBuffer;
+    }
+  }
+}
+
+function printStudentProfileCard() {
+  const studentUid = activeUserSession.uid;
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const currentStudent = students.find(s => s[0] == studentUid);
+
+  if (!currentStudent) {
+    alert("Student profile not found to print!");
+    return;
+  }
+
+  const studentName = currentStudent[1];
+  const rollNo = currentStudent[0];
+  const className = currentStudent[2];
+  const courseName = currentStudent[3];
+  const status = currentStudent[4];
+  const dob = currentStudent[5];
+  const age = currentStudent[6];
+  const aadhaarNo = currentStudent[7] || "-";
+  const primaryContact = currentStudent[8] || "-";
+  const secondaryContact = currentStudent[9] || "-";
+  const scholasticMarks = `10th: ${currentStudent[10]}% | 12th: ${currentStudent[11]}%`;
+  const accommodation = currentStudent[12] === "Hostel" ? `Hostel: ${currentStudent[13]} (Room ${currentStudent[14]})` : "Dayscholar Division";
+  const address = currentStudent[15] || "-";
+  const photoSrc = currentStudent[16] ? fixBase64Image(currentStudent[16]) : '';
+
+  const printWindow = window.open('', '_blank', 'width=900,height=1200');
+  
+  printWindow.document.write(`
+    <html>
+    <head>
+      <title>Student Profile - ${rollNo}</title>
+      <style>
+        @page { size: A4; margin: 20mm; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; margin: 0; padding: 0; background: #fff; line-height: 1.5; }
+        .print-container { width: 100%; max-width: 800px; margin: 0 auto; }
+        .logo-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #cbd5e1; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo-header img { height: 55px; object-fit: contain; }
+        .title-banner { text-align: center; margin-bottom: 30px; }
+        .title-banner h2 { margin: 0; font-size: 22px; color: #0f172a; letter-spacing: 1px; }
+        .title-banner p { margin: 5px 0 0 0; font-size: 14px; color: #64748b; font-weight: 500; }
+        .profile-grid { display: grid; grid-template-columns: 1fr 180px; gap: 30px; margin-bottom: 30px; }
+        .details-table { width: 100%; border-collapse: collapse; }
+        .details-table td { padding: 10px 12px; vertical-align: top; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .details-table td.label { font-weight: 600; color: #475569; width: 40%; }
+        .details-table td.value { color: #0f172a; }
+        .photo-wrapper { text-align: right; }
+        .photo-box { width: 150px; height: 170px; border: 1px solid #cbd5e1; border-radius: 8px; display: inline-block; overflow: hidden; background: #f8fafc; }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 12px; text-align: center; padding: 10px; }
+        .print-footer { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="print-container">
+        <div class="logo-header">
+          <img src="SASTRA_Logo.jpg" alt="SASTRA">
+          <img src="Greaves_Logo.jpg" alt="Greaves">
+          <img src="Swati_Logo.jpg" alt="Swati">
+          <img src="Pygmalion_Foundation_logo.jpg" alt="Pygmalion">
+        </div>
+        <div class="title-banner">
+          <h2>SWATI WOMEN'S PROGRAM</h2>
+          <p>Official Student Profile Record</p>
+        </div>
+        <div class="profile-grid">
+          <div>
+            <table class="details-table">
+              <tr><td class="label">Student Name</td><td class="value">: <strong>${studentName}</strong></td></tr>
+              <tr><td class="label">Roll Number / ID</td><td class="value">: ${rollNo}</td></tr>
+              <tr><td class="label">Enrolled Class</td><td class="value">: ${className}</td></tr>
+              <tr><td class="label">Course Track</td><td class="value">: ${courseName}</td></tr>
+              <tr><td class="label">Date of Birth (Age)</td><td class="value">: ${dob} (${age} Years)</td></tr>
+              <tr><td class="label">Aadhaar Number</td><td class="value">: ${aadhaarNo}</td></tr>
+              <tr><td class="label">Primary Contact</td><td class="value">: ${primaryContact}</td></tr>
+              <tr><td class="label">Secondary Contact</td><td class="value">: ${secondaryContact}</td></tr>
+              <tr><td class="label">Scholastic Marks</td><td class="value">: ${scholasticMarks}</td></tr>
+              <tr><td class="label">Accommodation</td><td class="value">: ${accommodation}</td></tr>
+              <tr><td class="label">Permanent Address</td><td class="value">: ${address}</td></tr>
+              <tr><td class="label">Profile Status</td><td class="value">: ${status}</td></tr>
+            </table>
+          </div>
+          <div class="photo-wrapper">
+            <div class="photo-box">
+              ${photoSrc ? `<img src="${photoSrc}">` : `<div class="photo-placeholder">No Photo Available</div>`}
+            </div>
+          </div>
+        </div>
+        <div class="print-footer">
+          <div style="text-align: right; font-weight: 500; margin-top: 40px; border-top: 1px dashed #94a3b8; padding-top: 5px; width: 150px;">Authorized Signature</div>
+        </div>
+      </div>
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); window.close(); }, 500);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 /* ==========================================================================
-   EVENT / INTERNSHIP ATTENDANCE MODULE
-   ========================================================================== */
+   EVENT / INTERNSHIP ATTENDANCE ENGINE (ADMIN EXCLUSIVE)
+   ========================================================================= */
 
 function initEventAttendanceTab() {
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const classes = JSON.parse(localStorage.getItem("MASTER_CLASSES")) || [];
   const batchSelect = document.getElementById("event-batch-select");
-  if(!batchSelect) return;
-  const classList = JSON.parse(localStorage.getItem("MASTER_CLASSES")) || [];
-  populateSelectControl("event-batch-select", classList, 0, 1);
-  document.getElementById("event-date").value = new Date().toISOString().split('T')[0];
+  
+  const dateInput = document.getElementById("event-date");
+  if(dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  
+  let batches = [...new Set(students.map(s => s[2]))].filter(Boolean);
+  if(batches.length === 0) {
+    batches = classes.map(c => c[0]);
+  }
+  
+  if(batchSelect) {
+    batchSelect.innerHTML = '<option value="">-- Select a Batch --</option>';
+    batches.forEach(batch => {
+      const opt = document.createElement("option");
+      opt.value = batch;
+      opt.textContent = batch;
+      batchSelect.appendChild(opt);
+    });
+  }
+  
+  const listCard = document.getElementById("attendance-list-card");
+  if(listCard) listCard.style.display = "none";
 }
 
 function loadStudentsForAttendance() {
-  const batchId = document.getElementById("event-batch-select").value;
-  const card = document.getElementById("attendance-list-card");
-  const tbody = document.getElementById("attendance-students-body");
-
-  if(!batchId) { card.style.display = "none"; return; }
-
+  const selectedBatch = document.getElementById("event-batch-select").value;
   const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
-  const batchStudents = students.filter(s => s[2] === batchId);
-
-  if(batchStudents.length === 0) {
-    alert("No students found in selected batch!");
-    card.style.display = "none"; return;
+  const tbody = document.getElementById("attendance-students-body");
+  
+  if (!selectedBatch) {
+    document.getElementById("attendance-list-card").style.display = "none";
+    return;
   }
-
+  
+  const filteredStudents = students.filter(s => s[2] === selectedBatch);
   tbody.innerHTML = "";
-  batchStudents.forEach(st => {
-    tbody.insertAdjacentHTML("beforeend", `
-      <tr>
-        <td><strong>${st[0]}</strong></td>
-        <td>${st[1]}</td>
-        <td style="text-align:center;">
-          <button type="button" class="att-status-btn present-state" id="evt-btn-${st[0]}" data-status="PRESENT" onclick="toggleEventAttStatus(this)">PRESENT</button>
+  
+  if (filteredStudents.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:#64748b;">No students found in this batch.</td></tr>`;
+  } else {
+    filteredStudents.forEach(student => {
+      const rollNo = student[0];
+      const name = student[1];
+      
+      const row = document.createElement("tr");
+      row.style.borderBottom = "1px solid #f1f5f9";
+      row.innerHTML = `
+        <td style="padding:12px;">${rollNo}</td>
+        <td style="padding:12px;"><strong>${name}</strong></td>
+        <td style="padding:12px; text-align:center;">
+          <label style="margin-right:15px; cursor:pointer; color:#16a34a; font-weight:600;">
+            <input type="radio" name="att_${rollNo}" value="Present" checked style="accent-color:#16a34a;"> Present
+          </label>
+          <label style="cursor:pointer; color:#dc2626; font-weight:600;">
+            <input type="radio" name="att_${rollNo}" value="Absent" style="accent-color:#dc2626;"> Absent
+          </label>
         </td>
-      </tr>
-    `);
-  });
-  card.style.display = "block";
-}
-
-function toggleEventAttStatus(btn) {
-  let cur = btn.getAttribute("data-status");
-  let next = cur === "PRESENT" ? "ABSENT" : "PRESENT";
-  btn.setAttribute("data-status", next);
-  btn.innerText = next;
-  btn.className = `att-status-btn ${next === "PRESENT" ? "present-state" : "absent-state"}`;
+      `;
+      tbody.appendChild(row);
+    });
+  }
+  
+  document.getElementById("attendance-list-card").style.display = "block";
 }
 
 async function submitEventAttendance() {
   const date = document.getElementById("event-date").value;
+  const desc = document.getElementById("event-desc").value;
   const batch = document.getElementById("event-batch-select").value;
-  const desc = document.getElementById("event-desc").value.trim();
-
-  if(!date || !batch || !desc) {
-    alert("Please enter Event Date, Batch, and Description!");
+  
+  if (!date || !desc || !batch) {
+    alert("Please fill all the details (Date, Batch, Description) before saving!");
     return;
   }
-
-  const rows = document.querySelectorAll("#attendance-students-body tr");
-  let payloads = [];
-
-  rows.forEach(r => {
-    let roll = r.cells[0].innerText;
-    let name = r.cells[1].innerText;
-    let btn = r.querySelector(".att-status-btn");
-    let status = btn.getAttribute("data-status");
-    let recId = "EVT-" + Date.now() + "-" + Math.floor(Math.random()*100);
-
-    payloads.push([date, desc, batch, roll, name, status, activeUserSession.name, recId]);
-  });
+  
+  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
+  const filteredStudents = students.filter(s => s[2] === batch);
+  
+  if (filteredStudents.length === 0) {
+    alert("No students to submit attendance for.");
+    return;
+  }
 
   setGlobalSyncState(true);
-  await syncWithGoogleSheet("Event_Attendance", null, SYSTEM_SCHEMA.EVENT_ATTENDANCE, "BATCH_SAVE", "", payloads);
-
-  let existing = JSON.parse(localStorage.getItem("EVENT_ATTENDANCE")) || [];
-  localStorage.setItem("EVENT_ATTENDANCE", JSON.stringify(existing.concat(payloads)));
-
-  setGlobalSyncState(false);
-  alert("Event Attendance Logged Successfully!");
-}
-
-/* ==========================================================================
-   STUDENT SELF PROFILE VIEWER
-   ========================================================================== */
-
-function renderStudentSelfProfileViewer() {
-  const uid = activeUserSession.uid;
-  const students = JSON.parse(localStorage.getItem("MASTER_STUDENTS")) || [];
-  const classes = JSON.parse(localStorage.getItem("MASTER_CLASSES")) || [];
-  const courses = JSON.parse(localStorage.getItem("MASTER_COURSES")) || [];
-  const attendanceLogs = JSON.parse(localStorage.getItem("DAILY_ATTENDANCE")) || [];
-  const marks = JSON.parse(localStorage.getItem("STUDENT_MARKS")) || [];
-
-  const profile = students.find(s => s[0] === uid) || students.find(s => s[1] === activeUserSession.name);
-  if(!profile) return;
-
-  document.getElementById("p-student-id").innerText = profile[0];
-  document.getElementById("p-student-name").innerText = profile[1];
   
-  const clsObj = classes.find(c => c[0] === profile[2]);
-  document.getElementById("p-class-name").innerText = clsObj ? clsObj[1] : profile[2];
+  let localEventLogs = JSON.parse(localStorage.getItem("EVENT_ATTENDANCE")) || [];
+  let payloadsForSheet = [];
 
-  const crsObj = courses.find(c => c[0] === profile[3]);
-  document.getElementById("p-course-name").innerText = crsObj ? crsObj[1] : profile[3];
-
-  document.getElementById("p-status").innerText = profile[4] || "ACTIVE";
-  document.getElementById("p-dob").innerText = profile[5] || "-";
-  document.getElementById("p-age").innerText = profile[6] || "-";
-  document.getElementById("p-aadhaar").innerText = profile[7] ? `XXXX-XXXX-${profile[7].slice(-4)}` : "[Redacted]";
-  document.getElementById("p-primary").innerText = profile[8] || "-";
-  document.getElementById("p-secondary").innerText = profile[9] || "-";
-  document.getElementById("p-accommodation").innerText = profile[12] || "Dayscholar";
-  document.getElementById("p-address").innerText = profile[15] || "-";
-
-  const imgFrame = document.getElementById("p-student-photo-frame");
-  const photo = fixBase64Image(profile[16]);
-  if(photo) {
-    imgFrame.innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
-  } else {
-    imgFrame.innerHTML = `<i class="fas fa-user-graduate" style="font-size:40px; color:var(--slate-400);"></i>`;
-  }
-
-  // Attendance Statistics Chart Logic
-  let totalClasses = 0, presentCount = 0;
-  attendanceLogs.forEach(log => {
-    if(log[3] === profile[0]) {
-      totalClasses++;
-      if(log[4] === "PRESENT") presentCount++;
+  filteredStudents.forEach(student => {
+    const rollNo = student[0];
+    const name = student[1];
+    const radioOpts = document.getElementsByName(`att_${rollNo}`);
+    let status = "Present";
+    
+    for (const opt of radioOpts) {
+      if (opt.checked) { status = opt.value; break; }
     }
+    
+    let recordId = "EVT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    let rowPayload = [date, desc, batch, rollNo, name, status, activeUserSession.name || "ADMIN", recordId];
+    
+    localEventLogs.push(rowPayload);
+    payloadsForSheet.push(rowPayload);
   });
+  
+  localStorage.setItem("EVENT_ATTENDANCE", JSON.stringify(localEventLogs));
 
-  let absentCount = totalClasses - presentCount;
-  renderAttendanceCharts(presentCount, absentCount);
-
-  // Render Student Marks Block
-  const marksWrapper = document.getElementById("student-semester-marks-block-wrapper");
-  if(!marksWrapper) return;
-
-  const myMarks = marks.filter(m => m[0] === profile[0]);
-  if(myMarks.length === 0) {
-    marksWrapper.innerHTML = "<p>No internal mark entries recorded yet.</p>";
-    return;
+  let headers = SYSTEM_SCHEMA.EVENT_ATTENDANCE;
+  try {
+    let res = await fetch(DEPLOYMENT_WEB_APP_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        tabName: "Event_Attendance",
+        action: "BATCH_SAVE",
+        payloads: payloadsForSheet,
+        headers: headers
+      })
+    });
+    let resData = await res.json();
+    console.log("Google Sheet Event Attendance Response:", resData);
+    alert("Event/Internship Attendance saved successfully to Google Sheets!");
+  } catch (err) {
+    console.error("Error saving event attendance:", err);
+    alert("Attendance saved locally, but error syncing with Google Sheets.");
+  } finally {
+    setGlobalSyncState(false);
   }
-
-  let mHtml = `<table><thead><tr><th>Subject Code</th><th>CIA 1</th><th>CIA 2</th><th>CIA 3</th><th>Assignment</th><th>Attendance</th><th>Semester</th><th>Total</th></tr></thead><tbody>`;
-  myMarks.forEach(m => {
-    mHtml += `<tr><td><strong>${m[1]}</strong></td><td>${m[2]}</td><td>${m[3]}</td><td>${m[4]}</td><td>${m[5]}</td><td>${m[6]}</td><td>${m[7]}</td><td><strong>${m[8]}</strong></td></tr>`;
-  });
-  mHtml += `</tbody></table>`;
-  marksWrapper.innerHTML = mHtml;
 }
 
-function renderAttendanceCharts(present, absent) {
-  const ctx1 = document.getElementById("overallAttendancePieChart");
-  if(!ctx1) return;
-
-  if(overallPieChartInstance) overallPieChartInstance.destroy();
-
-  overallPieChartInstance = new Chart(ctx1, {
-    type: 'pie',
-    data: {
-      labels: ['Present', 'Absent'],
-      datasets: [{
-        data: [present || 1, absent || 0],
-        backgroundColor: ['#10b981', '#ef4444']
-      }]
-    },
-    options: { responsive: true, maintainAspectRatio: false }
-  });
-}
+window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
+window.renderStaffDashboardConsole = renderStaffDashboardConsole;
+window.filterSubjectsForMarksEntry = filterSubjectsForMarksEntry;
+window.loadMarksEntrySheet = loadMarksEntrySheet;
+window.calculateRowTotalMarks = calculateRowTotalMarks;
+window.saveStudentsMarksRegister = saveStudentsMarksRegister;
+window.generateAttendanceRegisterForm = generateAttendanceRegisterForm;
+window.saveFacultyAttendanceRegister = saveFacultyAttendanceRegister;
+window.handleSystemLogin = handleSystemLogin;
+window.handleLogout = handleLogout;
+window.triggerSearchFilter = triggerSearchFilter;
+window.handleFormSubmission = handleFormSubmission;
+window.handlePhotoUpload = handlePhotoUpload;
+window.calculateStudentAgeRuntime = calculateStudentAgeRuntime;
+window.toggleHostelFieldsVisibility = toggleHostelFieldsVisibility;
+window.toggleTimetablePlannerMode = toggleTimetablePlannerMode;
+window.saveTimetableRecord = saveTimetableRecord;
+window.openTimetableModalPopup = openTimetableModalPopup;
+window.closeTimetableModalPopup = closeTimetableModalPopup;
+window.renderModalTimetableGrid = renderModalTimetableGrid;
+window.syncAllFromGoogleSheets = syncAllFromGoogleSheets;
+window.printStudentProfileCard = printStudentProfileCard;
+window.initEventAttendanceTab = initEventAttendanceTab;
+window.loadStudentsForAttendance = loadStudentsForAttendance;
+window.submitEventAttendance = submitEventAttendance;
