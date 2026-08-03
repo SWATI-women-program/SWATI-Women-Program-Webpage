@@ -2,7 +2,7 @@
    INSTITUTIONAL CORE SYSTEM ENGINE (MODULAR RUNTIME)
    ========================================================================== */
 
-const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZxymX4hcs5HaEul0B4aT-85a-XjJywiCsisc-kkngD8AhTuyKdum-6wowGPzl2eaa/exec"; 
+const DEPLOYMENT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyz7QcZQLNti_DroD5kGkIiXTyn0dJ_tC5jWvjvGGHVcBNk-51qbxgXspnc5isEMsyz/exec"; 
 
 const SYSTEM_SCHEMA = {
   MASTER_USERS: ["UID", "Name", "Password", "Role", "RecordID"],
