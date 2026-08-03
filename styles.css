@@ -98,7 +98,7 @@ body {
 .login-logo-wrapper img { 
   width: auto;             /* Automatic width based on aspect ratio */
   max-width: 120px;         /* Dynamic limit for wide logos */
-  height: 60px;            /* Fixed height for all logos */
+  height: 100px;            /* Fixed height for all logos */
   object-fit: contain;     /* Prevents stretching/distortion */
 }
 
