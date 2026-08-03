@@ -1665,3 +1665,54 @@ window.printStudentProfileCard = printStudentProfileCard;
 window.initEventAttendanceTab = initEventAttendanceTab;
 window.loadStudentsForAttendance = loadStudentsForAttendance;
 window.submitEventAttendance = submitEventAttendance;
+
+
+// Switch to Create Mode
+function openCreateTimetableMode() {
+  document.getElementById('tt-saved-list-block').style.display = 'none';
+  document.getElementById('tt-configure-block').style.display = 'block';
+  document.getElementById('tt-form-title').innerText = 'Create New Timetable';
+  
+  // Clear or reset fields if required
+  // loadSlotsForForm(); 
+}
+
+// Switch to Modify Mode and List Saved Timetables
+function loadSavedTimetablesList() {
+  document.getElementById('tt-configure-block').style.display = 'none';
+  const listBlock = document.getElementById('tt-saved-list-block');
+  const cardsContainer = document.getElementById('tt-saved-cards-container');
+  
+  listBlock.style.display = 'block';
+  cardsContainer.innerHTML = ''; // Clear previous list
+
+  // Example: Assuming ungaludaiya saved data `savedTimetables` array la iruku
+  // Replace this logic with your actual database/array fetch logic
+  if (typeof savedTimetables !== 'undefined' && savedTimetables.length > 0) {
+    savedTimetables.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'timetable-card';
+      card.style.cssText = 'padding: 15px; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; background: white; text-align: center;';
+      card.innerHTML = `<strong>${item.className}</strong><br><small>${item.day}</small>`;
+      
+      // Card click event to Edit
+      card.onclick = () => editTimetable(item);
+      cardsContainer.appendChild(card);
+    });
+  } else {
+    cardsContainer.innerHTML = '<p>No saved timetables found.</p>';
+  }
+}
+
+// Function to edit selected timetable
+function editTimetable(timetableData) {
+  document.getElementById('tt-saved-list-block').style.display = 'none';
+  document.getElementById('tt-configure-block').style.display = 'block';
+  document.getElementById('tt-form-title').innerText = `Editing Timetable: ${timetableData.className}`;
+  
+  // Set existing values to inputs
+  document.getElementById('tt-class-select').value = timetableData.classId;
+  document.getElementById('tt-day-select').value = timetableData.day;
+  
+  // Load existing slot data into #timetable-slots-dynamic-container
+}
