@@ -93,7 +93,7 @@ body {
   align-items: center; 
   border: 1px solid rgba(255,255,255,0.6);
 }
-.login-logo-wrapper img { width: 100px; height: 48px; object-fit: contain; }
+.login-logo-wrapper img { height: 48px; object-fit: contain; }
 
 .login-container { 
   background: #ffffff; 
