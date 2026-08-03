@@ -97,8 +97,8 @@ body {
 /* Image style update */
 .login-logo-wrapper img { 
   width: auto;             /* Automatic width based on aspect ratio */
-  max-width: 60px;         /* Dynamic limit for wide logos */
-  height: 40px;            /* Fixed height for all logos */
+  max-width: 120px;         /* Dynamic limit for wide logos */
+  height: 60px;            /* Fixed height for all logos */
   object-fit: contain;     /* Prevents stretching/distortion */
 }
 
