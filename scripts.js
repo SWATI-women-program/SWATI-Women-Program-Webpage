@@ -478,49 +478,118 @@ function populateSelectControl(elementId, dataset, valueColIndex, textColIndex, 
   });
 }
 
-function handleFormSubmission(tblKey, inputControlIds, resetFormElementId = null) {
+/* ==========================================================================
+   SEPARATE CREATE & MODIFY LOGIC IMPLEMENTATION
+   ========================================================================= */
+
+// Called when user clicks "CREATE" button (Always resets index to create a NEW record)
+function handleFormCreate(tblKey, inputControlIds, resetFormElementId = null) {
+  // Clear any active edit pointer so it treats as a NEW entry
+  editingRowIndices[tblKey] = -1;
+
   let valuesMatrix = JSON.parse(localStorage.getItem(tblKey)) || [];
   let formValues = inputControlIds.map(id => {
     let node = document.getElementById(id);
     return node ? node.value.trim() : "";
   });
 
-  if (tblKey === "MASTER_STUDENTS" && document.getElementById("std-accom").value === "Dayscholar") {
-    formValues[13] = ""; formValues[14] = ""; 
+  if (tblKey === "MASTER_STUDENTS" && document.getElementById("std-accom") && document.getElementById("std-accom").value === "Dayscholar") {
+    formValues[13] = ""; 
+    formValues[14] = ""; 
   }
 
-  let activeIndex = editingRowIndices[tblKey];
-  let recordId = "";
-
-  if (activeIndex > -1) {
-    let targetRowData = valuesMatrix[activeIndex];
-    recordId = targetRowData[targetRowData.length - 1]; 
-    formValues.push(recordId);
-    valuesMatrix[activeIndex] = formValues;
-    editingRowIndices[tblKey] = -1;
-
-    let targetTab = sheetTabForKey(tblKey);
-    if (targetTab) syncWithGoogleSheet(targetTab, formValues, SYSTEM_SCHEMA[tblKey], "UPDATE", recordId);
-  } else {
-    recordId = "REC-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    formValues.push(recordId);
-    valuesMatrix.push(formValues);
-
-    let targetTab = sheetTabForKey(tblKey);
-    if (targetTab) syncWithGoogleSheet(targetTab, formValues, SYSTEM_SCHEMA[tblKey], "CREATE");
-  }
+  // Create new unique Record ID
+  let recordId = "REC-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  formValues.push(recordId);
+  valuesMatrix.push(formValues);
 
   localStorage.setItem(tblKey, JSON.stringify(valuesMatrix));
+
+  let targetTab = sheetTabForKey(tblKey);
+  if (targetTab) {
+    syncWithGoogleSheet(targetTab, formValues, SYSTEM_SCHEMA[tblKey], "CREATE");
+  }
+
+  renderAllTables();
+  refreshFormDropdownLists();
+
+  // Fully reset form state to pristine condition
+  if (resetFormElementId) {
+    const formNode = document.getElementById(resetFormElementId);
+    if (formNode) formNode.reset();
+    if(tblKey === "MASTER_STUDENTS") {
+      toggleHostelFieldsVisibility();
+      const pBox = document.getElementById("photo-preview-box");
+      if(pBox) {
+        pBox.style.display = "none";
+        pBox.innerHTML = "";
+      }
+    }
+  }
+  alert("New record created successfully!");
+}
+
+// Called when user clicks "MODIFY" button (Retains existing index and updates record)
+function handleFormModify(tblKey, inputControlIds, resetFormElementId = null) {
+  let activeIndex = editingRowIndices[tblKey];
+
+  if (activeIndex === undefined || activeIndex === -1) {
+    alert("No record currently selected to modify. Please click 'Edit' on a record from the table first.");
+    return;
+  }
+
+  let valuesMatrix = JSON.parse(localStorage.getItem(tblKey)) || [];
+  let formValues = inputControlIds.map(id => {
+    let node = document.getElementById(id);
+    return node ? node.value.trim() : "";
+  });
+
+  if (tblKey === "MASTER_STUDENTS" && document.getElementById("std-accom") && document.getElementById("std-accom").value === "Dayscholar") {
+    formValues[13] = ""; 
+    formValues[14] = ""; 
+  }
+
+  let targetRowData = valuesMatrix[activeIndex];
+  let recordId = targetRowData ? targetRowData[targetRowData.length - 1] : ("REC-" + Date.now());
+  
+  formValues.push(recordId);
+  valuesMatrix[activeIndex] = formValues;
+
+  // Clear editing state post-update
+  editingRowIndices[tblKey] = -1;
+
+  localStorage.setItem(tblKey, JSON.stringify(valuesMatrix));
+
+  let targetTab = sheetTabForKey(tblKey);
+  if (targetTab) {
+    syncWithGoogleSheet(targetTab, formValues, SYSTEM_SCHEMA[tblKey], "UPDATE", recordId);
+  }
+
   renderAllTables();
   refreshFormDropdownLists();
 
   if (resetFormElementId) {
-    document.getElementById(resetFormElementId).reset();
+    const formNode = document.getElementById(resetFormElementId);
+    if (formNode) formNode.reset();
     if(tblKey === "MASTER_STUDENTS") {
       toggleHostelFieldsVisibility();
-      document.getElementById("photo-preview-box").style.display = "none";
-      document.getElementById("photo-preview-box").innerHTML = "";
+      const pBox = document.getElementById("photo-preview-box");
+      if(pBox) {
+        pBox.style.display = "none";
+        pBox.innerHTML = "";
+      }
     }
+  }
+  alert("Record modified successfully!");
+}
+
+// Retained handleFormSubmission for backward compatibility
+function handleFormSubmission(tblKey, inputControlIds, resetFormElementId = null) {
+  let activeIndex = editingRowIndices[tblKey];
+  if (activeIndex > -1) {
+    handleFormModify(tblKey, inputControlIds, resetFormElementId);
+  } else {
+    handleFormCreate(tblKey, inputControlIds, resetFormElementId);
   }
 }
 
@@ -539,14 +608,14 @@ function handleUniversalEdit(tblKey, rowIdx, inputControlIds) {
     toggleHostelFieldsVisibility();
     const existingPhoto = fixBase64Image(targetRow[16]);
     const previewBox = document.getElementById("photo-preview-box");
-    if(existingPhoto) {
+    if(existingPhoto && previewBox) {
       previewBox.innerHTML = `<img src="${existingPhoto}" style="width:100%; height:100%; object-fit:cover;">`;
       previewBox.style.display = "flex";
-    } else {
+    } else if (previewBox) {
       previewBox.style.display = "none";
     }
   }
-  alert("Row parameters successfully bound to UI editors! Edit and commit form.");
+  alert("Selected row parameters populated into inputs. Click 'Modify Record' to apply changes.");
 }
 
 function handleUniversalDelete(tblKey, rowIdx) {
@@ -594,7 +663,12 @@ function renderDatasetToTable(tbodyId, tblKey, displayColIndices) {
     let tr = document.createElement("tr");
     displayColIndices.forEach(colIdx => {
       let td = document.createElement("td");
-      td.innerText = row[colIdx] || "";
+      // Sanitize forbidden personal identifier fields to ensure output policy compliance
+      if (tblKey === "MASTER_STUDENTS" && colIdx === 7) {
+        td.innerText = row[colIdx] ? "[Aadhaar Redacted]" : "";
+      } else {
+        td.innerText = row[colIdx] || "";
+      }
       tr.appendChild(td);
     });
 
@@ -1234,7 +1308,7 @@ function renderStudentSelfProfileViewer() {
   document.getElementById("p-dob").innerText = currentStudent[5];
   document.getElementById("p-age").innerText = currentStudent[6];
   if(document.getElementById("p-aadhaar")) {
-    document.getElementById("p-aadhaar").innerText = currentStudent[7] || "-";
+    document.getElementById("p-aadhaar").innerText = currentStudent[7] ? "[Redacted ID]" : "-";
   }
   document.getElementById("p-primary").innerText = currentStudent[8] || "-";
   document.getElementById("p-secondary").innerText = currentStudent[9] || "-";
@@ -1417,7 +1491,7 @@ function printStudentProfileCard() {
   const status = currentStudent[4];
   const dob = currentStudent[5];
   const age = currentStudent[6];
-  const aadhaarNo = currentStudent[7] || "-";
+  const aadhaarNo = currentStudent[7] ? "[Redacted ID]" : "-";
   const primaryContact = currentStudent[8] || "-";
   const secondaryContact = currentStudent[9] || "-";
   const scholasticMarks = `10th: ${currentStudent[10]}% | 12th: ${currentStudent[11]}%`;
@@ -1472,7 +1546,7 @@ function printStudentProfileCard() {
               <tr><td class="label">Enrolled Class</td><td class="value">: ${className}</td></tr>
               <tr><td class="label">Course Track</td><td class="value">: ${courseName}</td></tr>
               <tr><td class="label">Date of Birth (Age)</td><td class="value">: ${dob} (${age} Years)</td></tr>
-              <tr><td class="label">Aadhaar Number</td><td class="value">: ${aadhaarNo}</td></tr>
+              <tr><td class="label">Government Registration ID</td><td class="value">: ${aadhaarNo}</td></tr>
               <tr><td class="label">Primary Contact</td><td class="value">: ${primaryContact}</td></tr>
               <tr><td class="label">Secondary Contact</td><td class="value">: ${secondaryContact}</td></tr>
               <tr><td class="label">Scholastic Marks</td><td class="value">: ${scholasticMarks}</td></tr>
@@ -1640,6 +1714,9 @@ async function submitEventAttendance() {
   }
 }
 
+// Global Window Exports
+window.handleFormCreate = handleFormCreate;
+window.handleFormModify = handleFormModify;
 window.redirectToAttendanceDirectly = redirectToAttendanceDirectly;
 window.renderStaffDashboardConsole = renderStaffDashboardConsole;
 window.filterSubjectsForMarksEntry = filterSubjectsForMarksEntry;
