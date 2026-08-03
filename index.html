@@ -516,11 +516,17 @@
       <section id="timetable-creator-section" class="tab-content">
         <div class="data-section">
           <h2>Timetable Matrix Planner</h2>
-          <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-            <button class="action-btn" onclick="toggleTimetablePlannerMode('create')"><i class="fas fa-edit"></i> Create / Modify Schedule</button>
-            <button class="action-btn" style="background: var(--sky-600);" onclick="toggleTimetablePlannerMode('existing')"><i class="fas fa-eye"></i> View Master Matrix</button>
-            <button class="action-btn" style="background: var(--emerald-600);" onclick="openTimetableModalPopup()"><i class="fas fa-window-restore"></i> Open Full View Modal</button>
-          </div>
+<div style="display: flex; gap: 15px; margin-top: 20px;">
+  <!-- CREATE BUTTON: Resets everything & saves a new entry -->
+  <button type="button" class="action-btn" onclick="handleFormCreate('MASTER_STUDENTS', ['std-id', 'std-name', 'std-class-select', 'std-course-select', 'std-status', 'std-dob', 'std-age', 'std-aadhaar', 'std-primary', 'std-secondary', 'std-10th', 'std-12th', 'std-accom', 'std-hostel-name', 'std-room', 'std-address', 'std-photo-hidden'], 'student-form-node');">
+    <i class="fas fa-plus-circle"></i> Create Record
+  </button>
+  
+  <!-- MODIFY BUTTON: Retains selected state and edits current row -->
+  <button type="button" class="action-btn" style="background: var(--sky-600);" onclick="handleFormModify('MASTER_STUDENTS', ['std-id', 'std-name', 'std-class-select', 'std-course-select', 'std-status', 'std-dob', 'std-age', 'std-aadhaar', 'std-primary', 'std-secondary', 'std-10th', 'std-12th', 'std-accom', 'std-hostel-name', 'std-room', 'std-address', 'std-photo-hidden'], 'student-form-node');">
+    <i class="fas fa-edit"></i> Modify Record
+  </button>
+</div>
 
           <!-- Configuration Panel -->
           <div id="tt-configure-block" style="display: none; background: var(--slate-50); padding: 25px; border-radius: 16px; border: 1px solid var(--slate-200); margin-bottom: 25px;">
