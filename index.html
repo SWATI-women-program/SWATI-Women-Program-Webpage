@@ -10,72 +10,12 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Chart.js CDN for Attendance Pie Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="styles.css">
-  
-  <style>
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
-      justify-content: center; align-items: center;
-    }
-    .modal-container {
-      background: #ffffff; width: 90%; max-width: 1200px; max-height: 85vh;
-      border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-      display: flex; flex-direction: column; overflow: hidden;
-      animation: modalFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .modal-header { padding: 24px 32px; background: #0f172a; color: #ffffff; display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h3 { margin: 0; font-size: 20px; font-weight: 700; }
-    .modal-close-btn { background: transparent; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; transition: color 0.2s; }
-    .modal-close-btn:hover { color: #ffffff; }
-    .modal-body { padding: 32px; overflow-y: auto; }
-    .modal-footer { padding: 20px 32px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; background: #f8fafc; }
-    
-    .charts-flex-wrapper {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 30px;
-      margin-bottom: 30px;
-    }
-    .chart-box-container {
-      flex: 1;
-      min-width: 280px;
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 16px;
-      border: 1px solid var(--slate-200);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .chart-box-container h4 {
-      margin-bottom: 15px;
-      color: var(--slate-800);
-      font-size: 15px;
-      font-weight: 700;
-      text-align: center;
-    }
-    .pie-canvas-holder {
-      width: 200px;
-      height: 200px;
-      position: relative;
-    }
-  </style>
 </head>
 <body>
 
-  <!-- Login Overlay Gateway Container -->
+  <!-- Login Gateway -->
   <div class="login-page" id="login-screen">
     <div class="login-logo-wrapper">
       <img src="SASTRA_Logo.jpg" alt="SASTRA Logo">
@@ -122,7 +62,7 @@
     </div>
   </header>
 
-  <!-- Navigation Workspace Matrix Framework -->
+  <!-- Main Navigation & Workspace -->
   <div class="workspace-wrapper">
     <aside class="sidebar" id="main-sidebar" style="display: none;">
       <div class="sidebar-brand">
@@ -157,12 +97,11 @@
         <li class="menu-item admin-only-opt" data-target="timetable-creator-section">
           <i class="fas fa-calendar-alt"></i> Matrix Planner
         </li>
-        <!-- Event/Internship option is now restricted to ADMIN only -->
         <li class="menu-item admin-only-opt" data-target="event-attendance-section">
           <i class="fas fa-calendar-check"></i> Event/Internship Att.
         </li>
         
-        <!-- Faculty Portal Specific Options -->
+        <!-- Faculty Options -->
         <li class="menu-item staff-only-opt" data-target="staff-dashboard-section">
           <i class="fas fa-chart-line"></i> Faculty Console
         </li>
@@ -173,7 +112,7 @@
           <i class="fas fa-pen-nib"></i> Internal Marks
         </li>
 
-        <!-- Student Profile Option -->
+        <!-- Student Options -->
         <li class="menu-item" id="student-menu-profile" data-target="student-profile-section" style="display:none;">
           <i class="fas fa-id-card"></i> My Academic Desk
         </li>
@@ -194,147 +133,30 @@
         </div>
       </header>
 
-<!-- Font Awesome Link (Icons-kkaga header label-la sethukonga) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<style>
-  /* Dashboard Section Styles */
-  #dashboard-section {
-    padding: 10px;
-  }
-
-  .data-section h2 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 24px;
-    color: var(--text-color, #1e293b);
-    letter-spacing: -0.5px;
-  }
-
-  /* Big Card Grid Layout */
-  .profile-card-modern {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 24px;
-  }
-
-  /* Large Modern Info Tile */
-  .info-tile-large {
-    background: var(--bg-card, #ffffff);
-    border-radius: 16px;
-    padding: 28px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Hover Elevation Effect */
-  .info-tile-large:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Dynamic Left Border Accents */
-  .info-tile-large.tile-staff { border-left: 6px solid var(--primary-accent, #6366f1); }
-  .info-tile-large.tile-students { border-left: 6px solid #38bdf8; }
-  .info-tile-large.tile-dayscholar { border-left: 6px solid #10b981; }
-  .info-tile-large.tile-hosteler { border-left: 6px solid #f59e0b; }
-
-  .tile-content span {
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #64748b;
-    display: block;
-    margin-bottom: 10px;
-  }
-
-  /* Larger Prominent Count Numbers */
-  .tile-content p {
-    font-size: 2.8rem;
-    font-weight: 800;
-    line-height: 1;
-    margin: 0;
-    color: #0f172a;
-  }
-
-  /* Background Icon Styling */
-  .tile-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-    opacity: 0.85;
-  }
-
-  /* Icon Accent Colors */
-  .tile-staff .tile-icon { background: rgba(99, 102, 241, 0.1); color: var(--primary-accent, #6366f1); }
-  .tile-students .tile-icon { background: rgba(56, 189, 248, 0.1); color: #0284c7; }
-  .tile-dayscholar .tile-icon { background: rgba(16, 185, 129, 0.1); color: #059669; }
-  .tile-hosteler .tile-icon { background: rgba(245, 158, 11, 0.1); color: #d97706; }
-</style>
-
-<!-- 1. DASHBOARD SUMMARY SECTION -->
-<section id="dashboard-section" class="tab-content active">
-  <div class="data-section">
-    <h2>Institutional Core Dashboard Analytics</h2>
-    
-    <div class="profile-card-modern">
-      <!-- Staff Card -->
-      <div class="info-tile-large tile-staff">
-        <div class="tile-content">
-          <span>Registered Staffs</span>
-          <p id="dash-count-staff">0</p>
+      <!-- 1. DASHBOARD SUMMARY SECTION -->
+      <section id="dashboard-section" class="tab-content active">
+        <div class="data-section">
+          <h2>Institutional Core Dashboard Analytics</h2>
+          <div class="profile-card-modern">
+            <div class="info-tile-large tile-staff">
+              <div class="tile-content"><span>Registered Staffs</span><p id="dash-count-staff">0</p></div>
+              <div class="tile-icon"><i class="fa-solid fa-user-tie"></i></div>
+            </div>
+            <div class="info-tile-large tile-students">
+              <div class="tile-content"><span>Total Enrolled Students</span><p id="dash-count-students">0</p></div>
+              <div class="tile-icon"><i class="fa-solid fa-user-graduate"></i></div>
+            </div>
+            <div class="info-tile-large tile-dayscholar">
+              <div class="tile-content"><span>Dayscholar Count</span><p id="dash-count-dayscholar">0</p></div>
+              <div class="tile-icon"><i class="fa-solid fa-bus"></i></div>
+            </div>
+            <div class="info-tile-large tile-hosteler">
+              <div class="tile-content"><span>Hostelers Strength</span><p id="dash-count-hosteler">0</p></div>
+              <div class="tile-icon"><i class="fa-solid fa-building-user"></i></div>
+            </div>
+          </div>
         </div>
-        <div class="tile-icon">
-          <i class="fa-solid fa-user-tie"></i>
-        </div>
-      </div>
-
-      <!-- Students Card -->
-      <div class="info-tile-large tile-students">
-        <div class="tile-content">
-          <span>Total Enrolled Students</span>
-          <p id="dash-count-students">0</p>
-        </div>
-        <div class="tile-icon">
-          <i class="fa-solid fa-user-graduate"></i>
-        </div>
-      </div>
-
-      <!-- Dayscholar Card -->
-      <div class="info-tile-large tile-dayscholar">
-        <div class="tile-content">
-          <span>Dayscholar Count</span>
-          <p id="dash-count-dayscholar">0</p>
-        </div>
-        <div class="tile-icon">
-          <i class="fa-solid fa-bus"></i>
-        </div>
-      </div>
-
-      <!-- Hosteler Card -->
-      <div class="info-tile-large tile-hosteler">
-        <div class="tile-content">
-          <span>Hostelers Strength</span>
-          <p id="dash-count-hosteler">0</p>
-        </div>
-        <div class="tile-icon">
-          <i class="fa-solid fa-building-user"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
       <!-- 2. USER CREDENTIALS SECTION -->
       <section id="user-management-section" class="tab-content">
@@ -522,7 +344,6 @@
             <button class="action-btn" style="background: var(--emerald-600);" onclick="openTimetableModalPopup()"><i class="fas fa-window-restore"></i> Open Full View Modal</button>
           </div>
 
-          <!-- Configuration Panel -->
           <div id="tt-configure-block" style="display: none; background: var(--slate-50); padding: 25px; border-radius: 16px; border: 1px solid var(--slate-200); margin-bottom: 25px;">
             <h3 style="font-size: 16px; margin-bottom: 15px;">Configure Day Matrix Slot</h3>
             <div class="form-grid-layout" style="margin-bottom: 20px;">
@@ -538,13 +359,10 @@
                 </select>
               </div>
             </div>
-            
             <div id="timetable-slots-dynamic-container" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;"></div>
-            
             <button class="action-btn" onclick="saveTimetableRecord()"><i class="fas fa-save"></i> Synchronize Timetable</button>
           </div>
 
-          <!-- Existing Grid View -->
           <div id="tt-matrix-block" style="display: none;">
             <div class="tt-grid" id="tt-matrix-runtime-grid"></div>
           </div>
@@ -580,6 +398,17 @@
               <input type="date" id="att-date-picker" onchange="generateAttendanceRegisterForm()">
             </div>
             <div class="form-field-group">
+              <label>Attendance Mode</label>
+              <select id="att-mode-select" onchange="toggleSwapFacultyField()">
+                <option value="NORMAL">Normal Attendance</option>
+                <option value="SWAP">Swap Attendance (Substitute Faculty)</option>
+              </select>
+            </div>
+            <div class="form-field-group" id="swap-staff-field-group" style="display: none;">
+              <label>Substitute Faculty (Swap Teacher)</label>
+              <select id="att-swap-staff-select"></select>
+            </div>
+            <div class="form-field-group">
               <label>Select Target Class</label>
               <select id="att-class-select" onchange="generateAttendanceRegisterForm()"></select>
             </div>
@@ -613,7 +442,7 @@
         <div class="data-section">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2>Academic Desk Profile Details</h2>
-            <button class="action-btn" onclick="printStudentProfileCard()"><i class="fas fa-print"></i> Print Official Profile</button>
+            <button class="action-btn" onclick="window.print()"><i class="fas fa-print"></i> Print Official Profile</button>
           </div>
           <div class="student-header-block">
             <div class="student-photo-frame" id="p-student-photo-frame"></div>
